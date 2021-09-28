@@ -1,0 +1,86 @@
+{
+  "name": "threejs-demo",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@craco/craco": "^6.1.2",
+    "@testing-library/jest-dom": "^5.14.1",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^12.8.3",
+    "@types/jest": "^26.0.23",
+    "@types/node": "^12.20.15",
+    "@types/react": "^17.0.11",
+    "@types/react-dom": "^17.0.8",
+    "antd": "^4.16.5",
+    "axios": "^0.21.1",
+    "craco-less": "^1.17.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "d3": "^7.0.3",
+    "dat.gui": "^0.7.7",
+    "dotenv-cli": "^4.0.0",
+    "flv.js": "^1.6.0",
+    "http-proxy-middleware": "^2.0.1",
+    "install": "^0.13.0",
+    "ladash": "^1.2.0",
+    "moment": "^2.29.1",
+    "npm": "^7.24.1",
+    "ol": "^6.5.0",
+    "react": "^17.0.2",
+    "react-dnd": "^14.0.2",
+    "react-dnd-html5-backend": "^14.0.0",
+    "react-dom": "^17.0.2",
+    "react-draggable": "^4.4.3",
+    "react-router-dom": "^5.2.0",
+    "react-scripts": "4.0.3",
+    "stats.js": "^0.17.0",
+    "three": "^0.131.1",
+    "typescript": "^4.3.4",
+    "uuid": "^8.3.2",
+    "web-vitals": "^1.1.2",
+    "xlsx": "^0.17.0",
+    "xlsx-style": "^0.8.13"
+  },
+  "scripts": {
+    "start": "craco start",
+    "start:prod": "dotenv -e .env.production craco start",
+    "build": "dotenv -e .env craco build",
+    "build:prod": "dotenv -e .env.production craco build",
+    "test": "craco test",
+    "eject": "craco eject",
+    "lint": "eslint src"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/d3": "^7.0.0",
+    "@types/dat.gui": "^0.7.7",
+    "@types/lodash": "^4.14.170",
+    "@types/ol": "^6.5.1",
+    "@types/react-router-dom": "^5.1.7",
+    "@types/stats.js": "^0.17.0",
+    "@types/three": "^0.131.1",
+    "eslint": "^7.31.0",
+    "husky": "^4.3.0"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "node ./scripts/git/commit-msg.js -E HUSKY_GIT_PARAMS && echo 'husky eslint' && npm run lint"
+    }
+  }
+}

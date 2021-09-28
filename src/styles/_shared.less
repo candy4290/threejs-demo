@@ -1,0 +1,46 @@
+@import './_func.less';
+/* 通用样式 */
+
+/* 文字不能选中 */
+.cannotBeSelected {
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+}
+
+/* ant design 表格序号 */
+.wc-shared-tableNumber {
+    .setFont(#666666, Montserrat, 24px, 400, auto);
+}
+/* form表单搜索条件框 */
+.wc-form-search {
+    padding: 20px 20px 0 !important;
+    background: rgba(#3E7BFA, 0.08);
+    border-radius: 8px;
+    border: 1px dashed rgba(#3E7BFA, 0.3);
+}
+/* 卡片与列表切换样式 */
+.wc-card-list-change {
+    height: 40px;
+    display: flex;
+    :nth-child(1) {
+        width: 40px;
+        height: 40px;
+        background-size: 40px 40px;
+        margin-right: 9px;
+        cursor: pointer;
+        transition: background-image 0.3s ease-in-out;
+    }
+    :nth-child(2) {
+        width: 40px;
+        height: 40px;
+        background-size: 40px 40px;
+        cursor: pointer;
+        transition: background-image 0.3s ease-in-out;
+    }
+}
+/* 关系图谱节点 */
+.wc-node-circle {
+    transition: all 0.3s ease-in-out;
+}
