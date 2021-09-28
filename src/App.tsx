@@ -3,7 +3,8 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
-import SkinningMorph from './components/skinning-morph';
+import AnimationMulti from './components/animation-multi';
+// import SkinningMorph from './components/skinning-morph';
 // import SkinningAdditive from './components/skinning-additive';
 // import BasicUse from './components/basic-use';
 // import ChinaMap from './components/china-map';
@@ -44,7 +45,8 @@ function App() {
       {/* <ChinaMap /> */}
       {/* <InteractiveVoxelpainter /> */}
       {/* <SkinningAdditive /> */}
-      <SkinningMorph />
+      {/* <SkinningMorph /> */}
+      <AnimationMulti />
     </div>
   );
 }
