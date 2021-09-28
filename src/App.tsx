@@ -3,10 +3,11 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
+import SkinningAdditive from './components/skinning-additive';
 // import BasicUse from './components/basic-use';
 // import ChinaMap from './components/china-map';
 // import InteractiveVoxelpainter from './components/interactive-voxelpainter';
-import AnimationSkinning from './components/animation-skinning';
+// import AnimationSkinning from './components/animation-skinning';
 // import MaterialsEnvmaps from './components/materials-envmaps';
 // import ShadersOcean from './components/shaders-ocean';
 // import Kmz from './components/kmz';
@@ -33,7 +34,7 @@ function App() {
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
       {/* <LoadGlbf /> */}
       {/* <LoadGlb /> */}
-      <AnimationSkinning />
+      {/* <AnimationSkinning /> */}
       {/* <MaterialsEnvmaps /> */}
       {/* <ShadersOcean /> */}
       {/* <Kmz /> */}
@@ -41,6 +42,7 @@ function App() {
       {/* <BasicUse /> */}
       {/* <ChinaMap /> */}
       {/* <InteractiveVoxelpainter /> */}
+      <SkinningAdditive />
     </div>
   );
 }
