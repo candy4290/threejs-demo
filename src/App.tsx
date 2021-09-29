@@ -3,7 +3,8 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
-import LoadGlb from './components/load-glb';
+import LightPhysical from './components/lights-physical';
+// import LoadGlb from './components/load-glb';
 // import Camera from './components/camera';
 // import LoadTtf from './components/load-ttf';
 // import TextShapes from './components/text-shapes';
@@ -40,7 +41,7 @@ function App() {
   return (
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
       {/* <LoadGlbf /> */}
-      <LoadGlb />
+      {/* <LoadGlb /> */}
       {/* <AnimationSkinning /> */}
       {/* <MaterialsEnvmaps /> */}
       {/* <ShadersOcean /> */}
@@ -56,6 +57,7 @@ function App() {
       {/* <LoadTtf /> */}
       {/* <TextShapes /> */}
       {/* <HemisphereLight /> */}
+      <LightPhysical />
     </div>
   );
 }
