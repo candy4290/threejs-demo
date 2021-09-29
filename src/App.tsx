@@ -3,7 +3,12 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
-import AnimationMulti from './components/animation-multi';
+import LoadGlb from './components/load-glb';
+// import Camera from './components/camera';
+// import LoadTtf from './components/load-ttf';
+// import TextShapes from './components/text-shapes';
+// import HemisphereLight from './components/hemisphere';
+// import AnimationMulti from './components/animation-multi';
 // import SkinningMorph from './components/skinning-morph';
 // import SkinningAdditive from './components/skinning-additive';
 // import BasicUse from './components/basic-use';
@@ -35,7 +40,7 @@ function App() {
   return (
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
       {/* <LoadGlbf /> */}
-      {/* <LoadGlb /> */}
+      <LoadGlb />
       {/* <AnimationSkinning /> */}
       {/* <MaterialsEnvmaps /> */}
       {/* <ShadersOcean /> */}
@@ -46,7 +51,11 @@ function App() {
       {/* <InteractiveVoxelpainter /> */}
       {/* <SkinningAdditive /> */}
       {/* <SkinningMorph /> */}
-      <AnimationMulti />
+      {/* <AnimationMulti /> */}
+      {/* <Camera /> */}
+      {/* <LoadTtf /> */}
+      {/* <TextShapes /> */}
+      {/* <HemisphereLight /> */}
     </div>
   );
 }

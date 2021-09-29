@@ -48,16 +48,20 @@ export default function LoadGlb() {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
     loader.load('/glbs/tokyo/LittlestTokyo.glb', function (gltf) {
+      console.log(gltf)
       const model = gltf.scene;
       model.position.set(1, 1, 0);
       model.scale.set(0.01, 0.01, 0.01);
       scene.add(model);
 
       mixer = new THREE.AnimationMixer(model); /* 变形动画 */
-      mixer.clipAction(gltf.animations[0]).play(); /* clipAction方法可以控制执行动画的实例 */
+      // mixer.clipAction(gltf.animations[0]).play(); /* clipAction方法可以控制执行动画的实例 */
 
       animate();
-    }, undefined, function (e) {
+    }, xhr => {
+      // console.log(xhr)
+      // console.log(xhr.loaded/xhr.total)
+    }, function (e) {
       console.error(e);
     });
 
