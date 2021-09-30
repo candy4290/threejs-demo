@@ -3,7 +3,9 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
-import LightPhysical from './components/lights-physical';
+import MiscLookat from './components/misc-lookat';
+// import LightPhysical from './components/lights-physical';
+// import MaterialCar from './components/material-car';
 // import LoadGlb from './components/load-glb';
 // import Camera from './components/camera';
 // import LoadTtf from './components/load-ttf';
@@ -57,7 +59,9 @@ function App() {
       {/* <LoadTtf /> */}
       {/* <TextShapes /> */}
       {/* <HemisphereLight /> */}
-      <LightPhysical />
+      {/* <LightPhysical /> */}
+      {/* <MaterialCar /> */}
+      <MiscLookat />
     </div>
   );
 }
