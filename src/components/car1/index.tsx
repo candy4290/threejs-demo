@@ -61,14 +61,16 @@ export default function MaterialCar() {
         controls.maxPolarAngle = Math.PI / 2.01;
         controls.target.set(0, 0, 0);
         controls.update();
-        
+
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
-        
+
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
         // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
-        
+
+        // createGround();
+
         const axesHelper = new THREE.AxesHelper(50); /* 辅助坐标轴，z-蓝色 x-红色 y-绿色 */
         scene.add(axesHelper);
 
@@ -119,6 +121,7 @@ export default function MaterialCar() {
             carModel.getObjectByName('trim').material = detailsMaterial;
             carModel.getObjectByName('glass').material = glassMaterial;
             carModel.position.x = 2;
+            carModel.paused = true;
 
             wheels.push(
                 carModel.getObjectByName('wheel_fl'),
@@ -126,6 +129,13 @@ export default function MaterialCar() {
                 carModel.getObjectByName('wheel_rl'),
                 carModel.getObjectByName('wheel_rr')
             );
+
+            // for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
+            //     if (i === 0 || i === 1) {
+            //         wheels[i].rotation.z = Math.PI / 8;
+            //     }
+            // }
+
             // shadow
             const mesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
@@ -190,6 +200,25 @@ export default function MaterialCar() {
 
     }
 
+    /* 创建地面 */
+    function createGround() {
+        const groundTexture = new THREE.TextureLoader().load('/textures/terrain/grasslight-big.jpg');
+        groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(25, 25);
+        groundTexture.anisotropy = 16;
+        groundTexture.encoding = THREE.sRGBEncoding;
+
+        const groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
+
+        let mesh = new THREE.Mesh(new THREE.PlaneGeometry(50, 100), groundMaterial);
+        mesh.position.y = - 0.01;
+        mesh.rotation.x = - Math.PI / 2;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+
+        scene.add(new THREE.AmbientLight(0x666666)); /* 环境光-均匀照亮所有物体 */
+    }
+
     /* 创建马路 */
     function createRoad() {
         const floorMat = new THREE.MeshStandardMaterial({
@@ -246,7 +275,7 @@ export default function MaterialCar() {
                 }
             },
             '相机跟随': false,
-            '车速(km/h)': 80,
+            '车速(km/h)': 40,
         }
         stopContinueControls.push(folder1.add(settings, '暂停'));
         stopContinueControls.push(folder1.add(settings, '继续'));
@@ -258,17 +287,17 @@ export default function MaterialCar() {
         stopContinueControls.forEach((control: any) => {
             control.classList1 = control.domElement.parentElement.parentElement.classList;
             control.classList2 = control.domElement.previousElementSibling.classList; /* 相同层级的前一个兄弟元素 */
-      
+
             control.setDisabled = () => {
-              control.classList1.add('no-pointer-events');
-              control.classList2.add('control-disabled');
+                control.classList1.add('no-pointer-events');
+                control.classList2.add('control-disabled');
             };
-      
+
             control.setEnabled = () => {
-              control.classList1.remove('no-pointer-events');
-              control.classList2.remove('control-disabled');
+                control.classList1.remove('no-pointer-events');
+                control.classList2.remove('control-disabled');
             };
-          })
+        })
 
     }
 
@@ -281,12 +310,12 @@ export default function MaterialCar() {
             (stopContinueControls[0] as any).setEnabled();
             (stopContinueControls[1] as any).setDisabled();
         }
-    
-      }
+
+    }
 
     function render() {
         const t = clock.getDelta();
-        const temp = t * (settings['车速(km/h)'] * 1000 / 3600 ) / 200;
+        const temp = t * (settings['车速(km/h)'] * 1000 / 3600) / 200;
         const time = - performance.now() / 1000;
         renderer.render(scene, camera);
         if (carModel) {

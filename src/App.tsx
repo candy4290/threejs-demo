@@ -3,9 +3,10 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
+import Outline from './components/outline';
 // import Trace from './components/trace';
 // import MiscLookat from './components/misc-lookat';
-import Car1 from './components/car1';
+// import Car1 from './components/car1';
 // import LightPhysical from './components/lights-physical';
 // import MaterialCar from './components/material-car';
 // import LoadGlb from './components/load-glb';
@@ -64,8 +65,9 @@ function App() {
       {/* <LightPhysical /> */}
       {/* <MaterialCar /> */}
       {/* <MiscLookat /> */}
-      <Car1 />
+      {/* <Car1 /> */}
       {/* <Trace /> */}
+      <Outline />
     </div>
   );
 }
