@@ -1,7 +1,12 @@
 import * as THREE from 'three';
+
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
+import { Line2 } from 'three/examples/jsm/lines/Line2';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 
 /**
   * 呼吸灯效果-物体轮廓发光效果
@@ -86,3 +91,91 @@ export function createOutLine(
         composer, outlinePass
     }
 }
+
+/* 渐变色线段生成方法 */
+export function createMovingLine(
+    curve: THREE.CatmullRomCurve3, index: number = 0, color = ['#00ffff', '#224242'], pointNum: number = 400, verticNum = 30
+  ) {
+    // curve.getLengths() /* 轨迹总长度 */
+    const lightGeometry = new LineGeometry();
+    const pointsV3 = curve.getPoints(pointNum);
+    const temp = pointsV3.slice(index, index + verticNum).reduce((arr: number[], item) => {
+      return arr.concat(item.x, item.y, item.z);
+    }, []);
+    lightGeometry.setPositions(temp);
+    const lightMaterial = new LineMaterial({
+      transparent: true,
+      side: THREE.DoubleSide,
+      linewidth: 8,
+      depthTest: false, // 慎用
+      vertexColors: true,
+    });
+    // 渐变色处理
+    const colors = gradientColors(color[1], color[0], verticNum);
+    const colorArr = colors.reduce((arr, item) => {
+      const Tcolor = new THREE.Color(item);
+      return arr.concat(Tcolor.r, Tcolor.g, Tcolor.b);
+    }, []);
+    lightGeometry.setColors(colorArr);
+    lightMaterial.resolution.set(window.innerWidth, window.innerHeight);
+    const lightLine = new Line2(lightGeometry, lightMaterial);
+    lightLine.computeLineDistances();
+    return {
+      index,
+      verticNum,
+      mesh: lightLine,
+      linePointsV3: pointsV3,
+    };
+  }
+
+  // 颜色插值
+  function gradientColors(start: any, end: any, steps: number, gamma?: any) {
+    const parseColor = function (hexStr) {
+      return hexStr.length === 4
+        ? hexStr
+            .substr(1)
+            .split("")
+            .map(function (s) {
+              return 0x11 * parseInt(s, 16);
+            })
+        : [
+            hexStr.substr(1, 2),
+            hexStr.substr(3, 2),
+            hexStr.substr(5, 2),
+          ].map(function (s) {
+            return parseInt(s, 16);
+          });
+    };
+    const pad = function (s) {
+      return s.length === 1 ? `0${s}` : s;
+    };
+    let j;
+    let ms;
+    let me;
+    const output: any[] = [];
+    const so: any[] = [];
+    // eslint-disable-next-line
+    gamma = gamma || 1;
+    const normalize = function (channel) {
+      // eslint-disable-next-line
+      return Math.pow(channel / 255, gamma);
+    };
+    // eslint-disable-next-line
+    start = parseColor(start).map(normalize);
+    // eslint-disable-next-line
+    end = parseColor(end).map(normalize);
+    for (let i = 0; i < steps; i++) {
+      ms = i / (steps - 1);
+      me = 1 - ms;
+      for (j = 0; j < 3; j++) {
+        // eslint-disable-next-line
+        so[j] = pad(
+          Math.round(
+            Math.pow(start[j] * me + end[j] * ms, 1 / gamma) * 255
+          ).toString(16)
+        );
+      }
+      output.push(`#${so.join("")}`);
+    }
+    return output;
+  }

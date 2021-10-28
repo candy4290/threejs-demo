@@ -12,9 +12,15 @@ import { traces, translateFunc } from "../../utils/map";
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
+import { createMovingLine } from "../../utils/threejs-util";
 // import { createOutLine } from "../../utils/threejs-util";
-import { MeshLine, MeshLineMaterial, MeshLineRaycast } from 'three.meshline';
 
+const anmations:{
+    index: number;
+    verticNum: number;
+    mesh: Line2;
+    linePointsV3: THREE.Vector3[];
+}[] = [];
 export default function MaterialCar() {
     const modalRef = useRef<{
         matLine: LineMaterial,
@@ -61,8 +67,6 @@ export default function MaterialCar() {
     composer, traceRelated, light } = modalRef.current;
 
     useEffect(() => {
-        console.log(MeshLine)
-
         getZbs();
         init();
         return () => {
@@ -101,7 +105,6 @@ export default function MaterialCar() {
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 0.85; /* 色调映射的曝光级别 */
-        renderer.setClearColor( 0x000000, 0.0 );
 
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
         camera.position.set(2, 2, 20);
@@ -117,6 +120,7 @@ export default function MaterialCar() {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
+        // scene.background = createSkyBox();
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture; /* 改纹理贴图将会被设为场景中所有物理材质的环境贴图 */
         // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
@@ -224,89 +228,38 @@ export default function MaterialCar() {
             traceRelated.push(p);
             scene.add(p);
         })
-        // const tubeGeometry = new THREE.TubeGeometry(curve, 100, 0.1, 50, false); /* 管道缓冲几何体 100-分段数 0.6-管道半径 50-管道横截面的分段数目 */
-        // const textureLoader = new THREE.TextureLoader();
-        // const texture = textureLoader.load('run.jpg');
-        // // 设置阵列模式为 RepeatWrapping
-        // texture.wrapS = THREE.RepeatWrapping;
-        // texture.wrapT = THREE.RepeatWrapping;
-        // // 设置x方向的偏移(沿着管道路径方向)，y方向默认1
-        // //等价texture.repeat= new THREE.Vector2(20,1)
-        // texture.repeat.x = 20;
-        // const tubeMaterial = new THREE.MeshPhongMaterial({ /* 具有镜面高光的光泽表面的材质 */
-        //     map: texture,
-        //     transparent: true,
-        // });
-        // const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
-        // scene.add(tube)
-        /**
-         * 创建一个半透明管道
-         */
-        // const tubeGeometry2 = new THREE.TubeGeometry(curve, 100, 0.05, 200, false); /* 沿着三维曲线延伸的管道 */
-        // const tubeMaterial2 = new THREE.MeshPhongMaterial({
-        //     color: 0x4488ff,
-        //     transparent: true,
-        //     opacity: 0.3,
-        //     wireframe: true
-        // });
-        // const tube2 = new THREE.Mesh(tubeGeometry2, tubeMaterial2);
-        // tube2.position.y = 0.05;
-        // traceRelated.push(tube2);
-        // scene.add(tube2)
 
-        // const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        // const material = new THREE.LineBasicMaterial({
-        //     color: '#bb9246',
-        //     linewidth: 6,
-        // });
-        // const line = new THREE.Line(geometry, material);
-        // traceRelated.push(line);
-        // scene.add(line)
+        const positions: number[] = [];
+        points.forEach(item => {
+            positions.push(item.x, item.y, item.z);
+        })
+        const geometry = new LineGeometry();
+        geometry.setPositions(positions);
+        matLine = new LineMaterial({
+            transparent: true,
+            color: 0xbb9246,
+            linewidth: 4, // in pixels
+            vertexColors: false,
+            dashed: false,
+            alphaToCoverage: true,
+        });
+        const line = new Line2(geometry, matLine);
+        line.computeLineDistances();
+        line.scale.set(1, 1, 1);
+        line.position.setY(0.1);
+        traceRelated.push(line);
+        scene.add(line);
 
-        // const positions: number[] = [];
-        // points.forEach(item => {
-        //     positions.push(item.x, item.y, item.z);
-        // })
-        // console.log(positions)
-        // const geometry = new LineGeometry();
-        // geometry.setPositions(positions);
-
-        // matLine = new LineMaterial({
-        //     color: 0xbb9246,
-        //     linewidth: 5, // in pixels
-        //     vertexColors: false,
-        //     //resolution:  // to be set by renderer, eventually
-        //     dashed: false,
-        //     alphaToCoverage: false,
-        // });
-        // const line = new Line2(geometry, matLine);
-        // line.computeLineDistances();
-        // line.scale.set(1, 1, 1);
-        // scene.add(line);
-
-        // const geo = new THREE.BufferGeometry().setFromPoints(points);
-        const g = new MeshLine();
-        // g.setPoints(points);
-        // const material = new MeshLineMaterial( {
-        //     // 随机颜色
-        //     color: 0xffffff,
-        //     // 透明度
-        //     opacity: 1,
-        //     // 二维向量指定画布大小,必需
-        //     // resolution: resolution,
-        //     // 线宽是否衰减(是否有透视效果)
-        //     // sizeAttenuation: params.sizeAttenuation,
-        //     // 线宽
-        //     lineWidth: 5,
-        //     // 摄像机近剪裁平面距离,跟随相机(sizeAttenuation为false时必须设置)
-        //     near: camera.near,
-        //     // 相机远剪裁平面距离,跟随相机(sizeAttenuation为false时必须设置)
-        //     far: camera.far,
-        //     // transparent: true
-        // });
-        // const mesh = new THREE.Mesh(g.geometry, material);
-        // scene.add(mesh);
-
+        new Array(1).fill(0).forEach((it, i) => {
+            const movingLine = createMovingLine(curve, i*100);
+            anmations.push(movingLine);
+            movingLine.mesh.userData = {
+                'isGuijiMesh': true
+            }
+            movingLine.mesh.visible = false;
+            scene.add(movingLine.mesh);
+            traceRelated.push(movingLine.mesh);
+        });
     }
 
     /* 创建马路 */
@@ -334,6 +287,7 @@ export default function MaterialCar() {
         scene.add(road);
     }
 
+    /* 创建GUI */
     function createPanel() {
         dat.GUI.TEXT_CLOSED = '关闭Controls';
         dat.GUI.TEXT_OPEN = '打开Controls';
@@ -343,6 +297,7 @@ export default function MaterialCar() {
         const folder2 = gui.addFolder('视角');
         settings = {
             '轨迹列表': '轨迹1',
+            '轨迹动画': false,
             '暂停': () => {
                 carModel.paused = true;
             },
@@ -365,6 +320,13 @@ export default function MaterialCar() {
             const idx = ['轨迹1', '轨迹2'].indexOf(e);
             drawLine(idx);
         });
+        folder0.add(settings, '轨迹动画').onChange(e => {
+            traceRelated.forEach(item => {
+                if (item.userData && item.userData.isGuijiMesh) {
+                    item.visible = e;
+                }
+            })
+        })
         folder1.add(settings, '车速(km/h)', 0, 400, 10);
         folder2.add(settings, '相机跟随').onChange(e => {
             if (!e) {
@@ -387,6 +349,21 @@ export default function MaterialCar() {
 
     }
 
+    /* 天空盒 */
+    function createSkyBox() {
+        const path = "/textures/cube/Park3Med/";
+        const urls = [
+            'px.jpg',
+            'nx.jpg',
+            'py.jpg',
+            'ny.jpg',
+            'pz.jpg',
+            'nz.jpg'
+        ];
+        const cubeTextureLoader = new THREE.CubeTextureLoader();
+        return cubeTextureLoader.setPath(path).load(urls);
+    }
+
     /* 更新暂停、继续操作的可用性 */
     function updateCrossFadeControls() {
         if (carModel.paused || carModel.progress >= 1) {
@@ -401,10 +378,26 @@ export default function MaterialCar() {
 
     function render() {
         requestAnimationFrame(render)
-        // matLine.resolution.set(window.innerWidth, window.innerHeight);
+        matLine.resolution.set(window.innerWidth, window.innerHeight);
         const t = clock.getDelta();
         const temp = t * (settings['车速(km/h)'] * 1000 / 3600) / 200;
         const time = - performance.now() / 1000;
+
+        if (settings['轨迹动画']) {
+            anmations.forEach((item) => {
+                item.index + 1 > item.linePointsV3.length - item.verticNum
+                  ? (item.index = 0)
+                  : (item.index += 3);
+                item.mesh.geometry.setPositions(
+                  item.linePointsV3
+                    .slice(item.index, item.index + item.verticNum)
+                    .reduce((arr: number[], item) => {
+                      return arr.concat(item.x, item.y, item.z);
+                    }, [])
+                );
+            });
+        }
+
         if (carModel) {
             updateCrossFadeControls();
         }
