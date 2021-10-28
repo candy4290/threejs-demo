@@ -1,0 +1,11 @@
+Model Information:
+* title:	红绿灯
+* source:	https://sketchfab.com/3d-models/86a1721337234f17813ab87fe8fee209
+* author:	faye100 (https://sketchfab.com/faye100)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "红绿灯" (https://sketchfab.com/3d-models/86a1721337234f17813ab87fe8fee209) by faye100 (https://sketchfab.com/faye100) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

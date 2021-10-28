@@ -7,7 +7,6 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
 
 export default function Outline() {
     const modalRef = useRef<{
@@ -28,7 +27,7 @@ export default function Outline() {
         selectedObjects: any[]
     }>({ group: new THREE.Group(), obj3d: new THREE.Object3D(), raycaster: new THREE.Raycaster(), mouse: new THREE.Vector2(), selectedObjects: [] } as any);
 
-    let { camera, scene, renderer, controls, gui, settings, clock, obj3d, group, composer, outlinePass, effectFXAA, raycaster, mouse, selectedObjects } = modalRef.current;
+    let { camera, scene, renderer, controls, obj3d, group, composer, outlinePass, raycaster, mouse, selectedObjects } = modalRef.current;
 
     useEffect(() => {
         init();
