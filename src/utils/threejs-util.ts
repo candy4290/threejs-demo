@@ -88,7 +88,7 @@ export function createOutLine(
         if (intersects.length > 0) {
             const selectedObject = intersects[0].object;
             addSelectedObject(selectedObject);
-            outlinePass.selectedObjects = selectedObjects;
+            outlinePass.selectedObjects = selectedObjects.filter(item => !!item.userData['hasOutlinePass']);
         } else {
             outlinePass.selectedObjects = [];
         }

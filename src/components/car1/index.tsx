@@ -168,6 +168,9 @@ export default function MaterialCar() {
             carModel = gltf.scene.children[0];
             carModel.traverse((object: any) => {
                 if (object.isMesh) {
+                    object.userData = {
+                        'hasOutlinePass': true
+                    }
                     object.castShadow = true; /* 物体开启“引起阴影” */
                     object.receiveShadow = true; /* 物体开启“接收阴影” */
                 };
