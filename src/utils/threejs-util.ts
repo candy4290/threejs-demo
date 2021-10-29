@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+// import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+// import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
@@ -39,11 +41,11 @@ export function createOutLine(
     let selectedObjects: any[] = [];
     const mouse = new THREE.Vector2();
     const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat,
-        stencilBuffer: false
-    })); /* 用于在Three.js中实现后期处理效果。该类管理了产生最终视觉效果的后期处理过程链。 后期处理过程根据它们添加/插入的顺序来执行，最后一个过程会被自动渲染到屏幕上。 */
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false
+  })); /* 用于在Three.js中实现后期处理效果。该类管理了产生最终视觉效果的后期处理过程链。 后期处理过程根据它们添加/插入的顺序来执行，最后一个过程会被自动渲染到屏幕上。 */
     composer.setSize(window.innerWidth, window.innerHeight);
 
     const renderPass = new RenderPass(scene, camera); /* RenderPass是合成器过程链中的一个过程，它绘制我们的场景和物体，就像它们通常在我们的渲染器中绘制的那样，没有任何影响。这通常是添加到合成器的第一个过程。RenderPass有两个参数，同调用render一样，参数是scene和camera对象。 */
@@ -58,6 +60,11 @@ export function createOutLine(
     outlinePass.visibleEdgeColor.set(visibleEdgeColor);
     outlinePass.hiddenEdgeColor.set(hiddenEdgeColor);
     composer.addPass(outlinePass);
+
+    // const effectFXAA = new ShaderPass(FXAAShader) /* 自定义的着色器通道 作为参数 */
+    // effectFXAA.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight)
+    // effectFXAA.renderToScreen = true
+    // composer.addPass(effectFXAA)
 
     renderer.domElement.style.touchAction = 'none';
     renderer.domElement.addEventListener('pointermove', onPointerMove);

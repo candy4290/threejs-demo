@@ -4,7 +4,6 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass';
 import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as dat from 'dat.gui';
 import './index.less';
@@ -13,7 +12,7 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 import { createMovingLine } from "../../utils/threejs-util";
-// import { createOutLine } from "../../utils/threejs-util";
+import { createOutLine } from "../../utils/threejs-util";
 
 const anmations:{
     index: number;
@@ -40,12 +39,10 @@ export default function MaterialCar() {
         settings: any,
         stopContinueControls: dat.GUIController[],
         composer: EffectComposer,
-        outlinePass: OutlinePass,
-        raycaster: THREE.Raycaster,
         mouse: THREE.Vector2,
         selectedObjects: any[],
         light: THREE.DirectionalLight,
-    }>({ traceRelated: [], wheels: [], progress: 0, stopContinueControls: [], raycaster: new THREE.Raycaster(), mouse: new THREE.Vector2(), selectedObjects: [],
+    }>({ traceRelated: [], wheels: [], progress: 0, stopContinueControls: [], mouse: new THREE.Vector2(), selectedObjects: [],
     lines: [
         [
             [2,0],
@@ -69,6 +66,7 @@ export default function MaterialCar() {
     useEffect(() => {
         getZbs();
         init();
+        window.addEventListener( 'resize', onWindowResize );
         return () => {
             camera.clear();
             scene.clear();
@@ -120,9 +118,9 @@ export default function MaterialCar() {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
-        // scene.background = createSkyBox();
-        scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture; /* 改纹理贴图将会被设为场景中所有物理材质的环境贴图 */
-        // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
+        // // scene.background = createSkyBox();
+        scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture; /* 该纹理贴图将会被设为场景中所有物理材质的环境贴图 */
+        // // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
         light = new THREE.DirectionalLight(0xffffff);
         light.position.set(20,20,20);
@@ -138,8 +136,10 @@ export default function MaterialCar() {
         createCar(); /* 车 */
 
         createPanel(); /* gui面板 */
-        // const temp = createOutLine(renderer, scene, camera);
-        // composer = temp.composer;
+
+        /* 后处理-outlinePass */
+        composer = createOutLine(renderer, scene, camera).composer;
+        composer.readBuffer.texture.encoding = renderer.outputEncoding;
     
         render();
     }
@@ -152,8 +152,8 @@ export default function MaterialCar() {
         const detailsMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff, metalness: 1.0, roughness: 0.5
         });
-        const glassMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff, metalness: 0, roughness: 0.1, transmission: 0.9, transparent: true
+        const glassMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff, metalness: 0, roughness: 0.1, opacity: 0.8, transparent: true
         });
 
         // Car
@@ -164,7 +164,7 @@ export default function MaterialCar() {
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
         loader.load('/glbs/ferrari.glb', function (gltf) {
-            console.log(gltf)
+            // console.log(gltf)
             carModel = gltf.scene.children[0];
             carModel.traverse((object: any) => {
                 if (object.isMesh) {
@@ -190,11 +190,11 @@ export default function MaterialCar() {
                 carModel.getObjectByName('wheel_rr')
             );
 
-            // for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
-            //     if (i === 0 || i === 1) {
-            //         wheels[i].rotation.z = Math.PI / 8;
-            //     }
-            // }
+            for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
+                if (i === 0 || i === 1) {
+                    wheels[i].rotation.z = Math.PI / 8;
+                }
+            }
 
             // shadow
             const mesh = new THREE.Mesh(
@@ -206,7 +206,7 @@ export default function MaterialCar() {
             mesh.rotation.x = - Math.PI / 2;
             mesh.renderOrder = 2;
             scene.add(carModel);
-            light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
+            // light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
         });
     }
 
@@ -295,6 +295,7 @@ export default function MaterialCar() {
         const folder0 = gui.addFolder('轨迹');
         const folder1 = gui.addFolder('车辆状态');
         const folder2 = gui.addFolder('视角');
+        const folder3 = gui.addFolder('后期处理');
         settings = {
             '轨迹列表': '轨迹1',
             '轨迹动画': false,
@@ -309,6 +310,7 @@ export default function MaterialCar() {
             },
             '相机跟随': false,
             '车速(km/h)': 40,
+            'outlinePass': false,
         }
         stopContinueControls.push(folder1.add(settings, '暂停'));
         stopContinueControls.push(folder1.add(settings, '继续'));
@@ -333,6 +335,11 @@ export default function MaterialCar() {
                 controls.reset();
             }
         });
+        folder3.add(settings, 'outlinePass');
+        folder0.open();
+        folder1.open();
+        folder2.open();
+        folder3.open();
 
         stopContinueControls.forEach((control: any) => {
             control.classList1 = control.domElement.parentElement.parentElement.classList;
@@ -374,6 +381,17 @@ export default function MaterialCar() {
             (stopContinueControls[1] as any).setDisabled();
         }
 
+    }
+
+    function onWindowResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( width, height );
+        composer.setSize( width, height );
     }
 
     function render() {
@@ -422,7 +440,11 @@ export default function MaterialCar() {
             }
         }
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
-        renderer.render(scene, camera);
+        if (settings['outlinePass']) {
+            composer.render();
+        } else {
+            renderer.render(scene, camera);
+        }
     }
 
     return (
