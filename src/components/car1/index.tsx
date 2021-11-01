@@ -11,15 +11,19 @@ import { traces, translateFunc } from "../../utils/map";
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
-import { createMovingLine } from "../../utils/threejs-util";
+import { createMovingLine, createUnrealBloomPass } from "../../utils/threejs-util";
 import { createOutLine } from "../../utils/threejs-util";
 
-const anmations:{
+const anmations: {
     index: number;
     verticNum: number;
     mesh: Line2;
     linePointsV3: THREE.Vector3[];
 }[] = [];
+
+const darkMaterial = new THREE.MeshBasicMaterial({ color: "black", opacity: 0 });
+const materials = {};
+
 export default function MaterialCar() {
     const modalRef = useRef<{
         matLine: LineMaterial,
@@ -39,34 +43,37 @@ export default function MaterialCar() {
         settings: any,
         stopContinueControls: dat.GUIController[],
         composer: EffectComposer,
+        finalComposer: EffectComposer,
         mouse: THREE.Vector2,
         selectedObjects: any[],
         light: THREE.DirectionalLight,
-    }>({ traceRelated: [], wheels: [], progress: 0, stopContinueControls: [], mouse: new THREE.Vector2(), selectedObjects: [],
-    lines: [
-        [
-            [2,0],
-            [2,-40],
-            [1,-43],
-            [0, -43.5],
-            [-1, -43],
-            [-2, -40],
-            [-2, 40],
-            [-1, 43],
-            [0, 43.5],
-            [1, 43],
-            [2, 40],
-            [2, 0],
+    }>({
+        traceRelated: [], wheels: [], progress: 0, stopContinueControls: [], mouse: new THREE.Vector2(), selectedObjects: [],
+        lines: [
+            [
+                [2, 0],
+                [2, -40],
+                [1, -43],
+                [0, -43.5],
+                [-1, -43],
+                [-2, -40],
+                [-2, 40],
+                [-1, 43],
+                [0, 43.5],
+                [1, 43],
+                [2, 40],
+                [2, 0],
+            ]
         ]
-    ] } as any);
+    } as any);
 
-    let { matLine ,lines, clock, curve, road, camera, scene, renderer, carModel, wheels, controls, gui, settings, stopContinueControls,
-    composer, traceRelated, light } = modalRef.current;
+    let { matLine, lines, clock, curve, road, camera, scene, renderer, carModel, wheels, controls, gui, settings, stopContinueControls,
+        composer, finalComposer, traceRelated, light } = modalRef.current;
 
     useEffect(() => {
         getZbs();
         init();
-        window.addEventListener( 'resize', onWindowResize );
+        window.addEventListener('resize', onWindowResize);
         return () => {
             camera.clear();
             scene.clear();
@@ -110,27 +117,27 @@ export default function MaterialCar() {
         controls = new MapControls(camera, renderer.domElement);
         controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
         controls.dampingFactor = 0.05;
-        
+
         controls.maxPolarAngle = Math.PI / 2.01;
         controls.screenSpacePanning = false;
-        controls.target.set(2,0,0);
+        controls.target.set(2, 0, 0);
 
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xeeeeee);
+        // scene.background = new THREE.Color(0xeeeeee);
         // // scene.background = createSkyBox();
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture; /* 该纹理贴图将会被设为场景中所有物理材质的环境贴图 */
         // // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
         light = new THREE.DirectionalLight(0xffffff);
-        light.position.set(20,20,20);
+        light.position.set(20, 20, 20);
         light.castShadow = true; /* 灯光开启“引起阴影” */
         scene.add(light);
 
         const axesHelper = new THREE.AxesHelper(50); /* 辅助坐标轴，z-蓝色 x-红色 y-绿色 */
-        scene.add(axesHelper);
+        // scene.add(axesHelper);
 
-        drawLine(); /* 轨迹曲线 */
+        const t: any[] = drawLine(); /* 轨迹曲线 */
 
         createRoad(); /* 马路 */
         createCar(); /* 车 */
@@ -138,9 +145,17 @@ export default function MaterialCar() {
         createPanel(); /* gui面板 */
 
         /* 后处理-outlinePass */
-        composer = createOutLine(renderer, scene, camera).composer;
+        // composer = createOutLine(renderer, scene, camera).composer;
+        // composer.readBuffer.texture.encoding = renderer.outputEncoding
+
+        // const temp = createOutLine(renderer, scene, camera);
+        // composer = temp.composer;
+        const temp = createUnrealBloomPass(scene, camera, renderer, t);
+        composer = temp.composer;
+
         composer.readBuffer.texture.encoding = renderer.outputEncoding;
-    
+        // finalComposer.readBuffer.texture.encoding = renderer.outputEncoding;
+
         render();
     }
 
@@ -169,7 +184,7 @@ export default function MaterialCar() {
             carModel.traverse((object: any) => {
                 if (object.isMesh) {
                     object.userData = {
-                        'hasOutlinePass': true
+                        'hasOutlinePass': true,
                     }
                     object.castShadow = true; /* 物体开启“引起阴影” */
                     object.receiveShadow = true; /* 物体开启“接收阴影” */
@@ -193,11 +208,11 @@ export default function MaterialCar() {
                 carModel.getObjectByName('wheel_rr')
             );
 
-            for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
-                if (i === 0 || i === 1) {
-                    wheels[i].rotation.z = Math.PI / 8;
-                }
-            }
+            // for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
+            //     if (i === 0 || i === 1) {
+            //         wheels[i].rotation.z = Math.PI / 8;
+            //     }
+            // }
 
             // shadow
             const mesh = new THREE.Mesh(
@@ -217,14 +232,14 @@ export default function MaterialCar() {
     function drawLine(index = 0) {
         curve = new THREE.CatmullRomCurve3([ /* 平滑三维曲线 */
             ...lines[index].map(item => new THREE.Vector3(item[0], 0, item[1]))
-        ], false/*是否闭合*/, 
-        'catmullrom', 0
+        ], false/*是否闭合*/,
+            'catmullrom', 0
         );
 
         /* 画出过原来路径的几个点的直线 */
         const points = lines[index].map(item => new THREE.Vector3(item[0], 0, item[1]));
         const boxGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-        const boxMaterial = new THREE.MeshBasicMaterial({color: 0xffff00, wireframe: true});
+        const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true });
         points.forEach(point => {
             const p = new THREE.Mesh(boxGeometry, boxMaterial);
             p.position.set(point.x, point.y, point.z);
@@ -252,17 +267,20 @@ export default function MaterialCar() {
         line.position.setY(0.1);
         traceRelated.push(line);
         scene.add(line);
-
+        const r: any[] = [];
         new Array(1).fill(0).forEach((it, i) => {
-            const movingLine = createMovingLine(curve, i*100);
+            const movingLine = createMovingLine(curve, i * 100);
             anmations.push(movingLine);
             movingLine.mesh.userData = {
-                'isGuijiMesh': true
+                'isGuijiMesh': true,
+                'bloom': true
             }
             movingLine.mesh.visible = false;
+            r.push(movingLine.mesh);
             scene.add(movingLine.mesh);
             traceRelated.push(movingLine.mesh);
         });
+        return r;
     }
 
     /* 创建马路 */
@@ -393,8 +411,8 @@ export default function MaterialCar() {
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
 
-        renderer.setSize( width, height );
-        composer.setSize( width, height );
+        renderer.setSize(width, height);
+        composer.setSize(width, height);
     }
 
     function render() {
@@ -407,14 +425,14 @@ export default function MaterialCar() {
         if (settings['轨迹动画']) {
             anmations.forEach((item) => {
                 item.index + 1 > item.linePointsV3.length - item.verticNum
-                  ? (item.index = 0)
-                  : (item.index += 3);
+                    ? (item.index = 0)
+                    : (item.index += 3);
                 item.mesh.geometry.setPositions(
-                  item.linePointsV3
-                    .slice(item.index, item.index + item.verticNum)
-                    .reduce((arr: number[], item) => {
-                      return arr.concat(item.x, item.y, item.z);
-                    }, [])
+                    item.linePointsV3
+                        .slice(item.index, item.index + item.verticNum)
+                        .reduce((arr: number[], item) => {
+                            return arr.concat(item.x, item.y, item.z);
+                        }, [])
                 );
             });
         }
@@ -444,9 +462,31 @@ export default function MaterialCar() {
         }
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
         if (settings['outlinePass']) {
+            // composer.render();
+            
+            // scene.traverse(darkenNonBloomed);
             composer.render();
+            // scene.traverse(restoreMaterial);
+            // render the entire scene, then render bloom scene on top
+            // finalComposer.render();
         } else {
             renderer.render(scene, camera);
+        }
+    }
+
+    function darkenNonBloomed(obj) {
+        if (obj.isMesh && !obj.userData['bloom']) {
+            materials[obj.uuid] = obj.material;
+            obj.material = darkMaterial;
+            // obj.visible = false;
+        }
+    }
+
+    function restoreMaterial(obj) {
+        if (materials[obj.uuid]) {
+            obj.material = materials[obj.uuid];
+            // obj.visible = true;
+            delete materials[obj.uuid];
         }
     }
 

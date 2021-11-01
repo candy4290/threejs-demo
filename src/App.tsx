@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 import Stats from 'stats.js';
+// import UnrealBloom from './components/unreal-bloom';
 import Car1 from './components/car1';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
   return (
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
       <Car1 />
+      {/* <UnrealBloom /> */}
     </div>
   );
 }
