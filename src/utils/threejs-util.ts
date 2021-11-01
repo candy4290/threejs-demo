@@ -10,6 +10,36 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+import { createAbstractBuilder } from 'typescript';
+
+/**
+ * 创建初始composer&
+ *
+ * @export
+ * @param {THREE.WebGLRenderer} renderer
+ * @param {THREE.Scene} scene
+ * @param {THREE.Camera} camera
+ * @return {*} 
+ */
+export function createComposerAndRenderPass(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera): {
+  composer: EffectComposer,
+  renderPass: RenderPass
+} {
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    stencilBuffer: false
+  })); /* 用于在Three.js中实现后期处理效果。该类管理了产生最终视觉效果的后期处理过程链。 后期处理过程根据它们添加/插入的顺序来执行，最后一个过程会被自动渲染到屏幕上。 */
+  composer.setSize(window.innerWidth, window.innerHeight);
+
+  const renderPass = new RenderPass(scene, camera); /* RenderPass是合成器过程链中的一个过程，它绘制我们的场景和物体，就像它们通常在我们的渲染器中绘制的那样，没有任何影响。这通常是添加到合成器的第一个过程。RenderPass有两个参数，同调用render一样，参数是scene和camera对象。 */
+  composer.addPass(renderPass); /* 添加过程 */
+
+  return {
+    composer, renderPass
+  }
+}
 
 /**
   * 呼吸灯效果-物体轮廓发光效果
@@ -28,6 +58,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
  * @return {*}  {{composer: EffectComposer, outlinePass: OutlinePass}}
  */
 export function createOutLine(
+  composer: EffectComposer,
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.Camera,
@@ -38,19 +69,9 @@ export function createOutLine(
   usePatternTexture: boolean = false,
   visibleEdgeColor: string = '#bb9246',
   hiddenEdgeColor: string = '#190a05'
-): { renderPass: RenderPass, composer: EffectComposer, outlinePass: OutlinePass } {
+): { composer: EffectComposer, outlinePass: OutlinePass } {
   let selectedObjects: any[] = [];
   const mouse = new THREE.Vector2();
-  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat,
-    stencilBuffer: false
-  })); /* 用于在Three.js中实现后期处理效果。该类管理了产生最终视觉效果的后期处理过程链。 后期处理过程根据它们添加/插入的顺序来执行，最后一个过程会被自动渲染到屏幕上。 */
-  composer.setSize(window.innerWidth, window.innerHeight);
-
-  const renderPass = new RenderPass(scene, camera); /* RenderPass是合成器过程链中的一个过程，它绘制我们的场景和物体，就像它们通常在我们的渲染器中绘制的那样，没有任何影响。这通常是添加到合成器的第一个过程。RenderPass有两个参数，同调用render一样，参数是scene和camera对象。 */
-  composer.addPass(renderPass); /* 添加过程 */
 
   const outlinePass = new OutlinePass(new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera);
   outlinePass.edgeStrength = edgeStrength; /* 粗 */
@@ -61,11 +82,6 @@ export function createOutLine(
   outlinePass.visibleEdgeColor.set(visibleEdgeColor);
   outlinePass.hiddenEdgeColor.set(hiddenEdgeColor);
   composer.addPass(outlinePass);
-
-  // const effectFXAA = new ShaderPass(FXAAShader) /* 自定义的着色器通道 作为参数 */
-  // effectFXAA.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight)
-  // effectFXAA.renderToScreen = true
-  // composer.addPass(effectFXAA)
 
   renderer.domElement.style.touchAction = 'none';
   renderer.domElement.addEventListener('pointermove', onPointerMove);
@@ -96,7 +112,7 @@ export function createOutLine(
   }
 
   return {
-    renderPass, composer, outlinePass
+    composer, outlinePass
   }
 }
 
@@ -105,13 +121,10 @@ export function createOutLine(
  *
  * @export
  */
-export function createUnrealBloomPass(scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, selectedObjects: any[] = []): {
+export function createUnrealBloomPass(composer: EffectComposer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, selectedObjects: any[] = []): {
   composer: EffectComposer,
-  // finalComposer: EffectComposer,
   bloomPass: UnrealBloomPass,
 } {
-  const renderPass = new RenderPass(scene, camera);
-
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85,
     selectedObjects, scene, camera
@@ -120,48 +133,23 @@ export function createUnrealBloomPass(scene: THREE.Scene, camera: THREE.Perspect
   bloomPass.strength = 1.5;
   bloomPass.radius = 0;
 
-  const composer = new EffectComposer(renderer);
-  // composer.renderToScreen = false;
-  composer.addPass(renderPass);
   composer.addPass(bloomPass);
 
-  // const finalPass = new ShaderPass(
-  //   new THREE.ShaderMaterial({
-  //     uniforms: {
-  //       baseTexture: { value: null },
-  //       bloomTexture: { value: composer.renderTarget2.texture },
-  //     },
-  //     vertexShader: `
-  //       varying vec2 vUv;
-  //       void main() {
-  //         vUv = uv;
-  //         gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-  //       }
-  //       `,
-  //     fragmentShader: `
-  //         uniform sampler2D baseTexture;
-  //         uniform sampler2D bloomTexture;
-  //         varying vec2 vUv;
-  //         void main() {
-  //           gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
-  //         }
-  //       `,
-  //     defines: {}
-  //   }), "baseTexture"
-  // );
-  // finalPass.needsSwap = true;
-
-  // const finalComposer = new EffectComposer(renderer);
-
-  // const effectFXAA = new ShaderPass(FXAAShader) /* 自定义的着色器通道 作为参数 */
-  // effectFXAA.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight)
-  // effectFXAA.renderToScreen = true
-  // composer.addPass(effectFXAA)
-
-  // finalComposer.addPass(renderPass);
-  // finalComposer.addPass(finalPass);
-  // finalComposer.addPass(effectFXAA);
   return { composer, bloomPass };
+}
+
+/**
+ * 添加抗锯齿
+ *
+ * @export
+ */
+export function createFxaa(composer: EffectComposer) {
+  const effectFXAA = new ShaderPass(FXAAShader) /* 自定义的着色器通道 作为参数 */
+  effectFXAA.material.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight)
+  composer.addPass(effectFXAA);
+  return {
+    composer, effectFXAA
+  }
 }
 
 /* 渐变色线段生成方法 */

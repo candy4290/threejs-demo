@@ -11,8 +11,11 @@ import { traces, translateFunc } from "../../utils/map";
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
-import { createMovingLine, createUnrealBloomPass } from "../../utils/threejs-util";
+import { createComposerAndRenderPass, createFxaa, createMovingLine, createUnrealBloomPass } from "../../utils/threejs-util";
 import { createOutLine } from "../../utils/threejs-util";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 
 const anmations: {
     index: number;
@@ -42,11 +45,14 @@ export default function MaterialCar() {
         gui: dat.GUI,
         settings: any,
         stopContinueControls: dat.GUIController[],
-        composer: EffectComposer,
-        finalComposer: EffectComposer,
+        composer: EffectComposer | null,
+        bloomPass: UnrealBloomPass,
+        outlinePass: OutlinePass,
+        effectFXAA: ShaderPass,
         mouse: THREE.Vector2,
         selectedObjects: any[],
         light: THREE.DirectionalLight,
+        needBloomed: any[],
     }>({
         traceRelated: [], wheels: [], progress: 0, stopContinueControls: [], mouse: new THREE.Vector2(), selectedObjects: [],
         lines: [
@@ -64,11 +70,11 @@ export default function MaterialCar() {
                 [2, 40],
                 [2, 0],
             ]
-        ]
+        ], needBloomed: []
     } as any);
 
     let { matLine, lines, clock, curve, road, camera, scene, renderer, carModel, wheels, controls, gui, settings, stopContinueControls,
-        composer, finalComposer, traceRelated, light } = modalRef.current;
+        composer, traceRelated, light, needBloomed, bloomPass, outlinePass, effectFXAA } = modalRef.current;
 
     useEffect(() => {
         getZbs();
@@ -103,7 +109,7 @@ export default function MaterialCar() {
 
         clock = new THREE.Clock();
 
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer = new THREE.WebGLRenderer({ canvas });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true; /* 渲染器开启阴影渲染 */
@@ -125,9 +131,12 @@ export default function MaterialCar() {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
         scene = new THREE.Scene();
         // scene.background = new THREE.Color(0xeeeeee);
-        // // scene.background = createSkyBox();
+        // scene.background = createSkyBox();
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture; /* 该纹理贴图将会被设为场景中所有物理材质的环境贴图 */
         // // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
+
+        composer = createComposerAndRenderPass(renderer, scene, camera).composer;
+        composer.readBuffer.texture.encoding = renderer.outputEncoding;
 
         light = new THREE.DirectionalLight(0xffffff);
         light.position.set(20, 20, 20);
@@ -137,24 +146,12 @@ export default function MaterialCar() {
         const axesHelper = new THREE.AxesHelper(50); /* 辅助坐标轴，z-蓝色 x-红色 y-绿色 */
         // scene.add(axesHelper);
 
-        const t: any[] = drawLine(); /* 轨迹曲线 */
+        drawLine(); /* 轨迹曲线 */
 
         createRoad(); /* 马路 */
         createCar(); /* 车 */
 
         createPanel(); /* gui面板 */
-
-        /* 后处理-outlinePass */
-        // composer = createOutLine(renderer, scene, camera).composer;
-        // composer.readBuffer.texture.encoding = renderer.outputEncoding
-
-        // const temp = createOutLine(renderer, scene, camera);
-        // composer = temp.composer;
-        const temp = createUnrealBloomPass(scene, camera, renderer, t);
-        composer = temp.composer;
-
-        composer.readBuffer.texture.encoding = renderer.outputEncoding;
-        // finalComposer.readBuffer.texture.encoding = renderer.outputEncoding;
 
         render();
     }
@@ -178,7 +175,7 @@ export default function MaterialCar() {
 
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
-        loader.load('/glbs/ferrari.glb', function (gltf) {
+        loader.load('/glbs/ferrari.glb', (gltf) => {
             // console.log(gltf)
             carModel = gltf.scene.children[0];
             carModel.traverse((object: any) => {
@@ -200,7 +197,6 @@ export default function MaterialCar() {
             carModel.position.x = 2;
             carModel.paused = true;
             carModel.progress = 0;
-
             wheels.push(
                 carModel.getObjectByName('wheel_fl'),
                 carModel.getObjectByName('wheel_fr'),
@@ -267,7 +263,7 @@ export default function MaterialCar() {
         line.position.setY(0.1);
         traceRelated.push(line);
         scene.add(line);
-        const r: any[] = [];
+        needBloomed = [];
         new Array(1).fill(0).forEach((it, i) => {
             const movingLine = createMovingLine(curve, i * 100);
             anmations.push(movingLine);
@@ -276,11 +272,10 @@ export default function MaterialCar() {
                 'bloom': true
             }
             movingLine.mesh.visible = false;
-            r.push(movingLine.mesh);
+            needBloomed.push(movingLine.mesh);
             scene.add(movingLine.mesh);
             traceRelated.push(movingLine.mesh);
         });
-        return r;
     }
 
     /* 创建马路 */
@@ -331,7 +326,9 @@ export default function MaterialCar() {
             },
             '相机跟随': false,
             '车速(km/h)': 40,
-            'outlinePass': false,
+            '轨迹光效': false,
+            '泛光': false,
+            '抗锯齿': false
         }
         stopContinueControls.push(folder1.add(settings, '暂停'));
         stopContinueControls.push(folder1.add(settings, '继续'));
@@ -356,7 +353,33 @@ export default function MaterialCar() {
                 controls.reset();
             }
         });
-        folder3.add(settings, 'outlinePass');
+        folder3.add(settings, '轨迹光效').onChange(e => {
+            if (e && composer) {
+                bloomPass = createUnrealBloomPass(composer, scene, camera, renderer, needBloomed).bloomPass;
+            } else {
+                composer?.removePass(bloomPass);
+            }
+        });
+        folder3.add(settings, '泛光').onChange(e => {
+            if (e && composer) {
+                outlinePass = createOutLine(composer, renderer, scene, camera).outlinePass;
+            } else {
+                composer?.removePass(outlinePass);
+            }
+        });
+        folder3.add(settings, '抗锯齿').onChange(e => {
+            if (e && composer) {
+                effectFXAA = createFxaa(composer).effectFXAA;
+                if (settings['泛光']) {
+                    outlinePass = createOutLine(composer, renderer, scene, camera).outlinePass;
+                }
+                if (settings['轨迹光效']) {
+                    bloomPass = createUnrealBloomPass(composer, scene, camera, renderer, needBloomed).bloomPass;
+                }
+            } else {
+                composer?.removePass(effectFXAA);
+            }
+        });
         folder0.open();
         folder1.open();
         folder2.open();
@@ -412,7 +435,7 @@ export default function MaterialCar() {
         camera.updateProjectionMatrix();
 
         renderer.setSize(width, height);
-        composer.setSize(width, height);
+        composer?.setSize(width, height);
     }
 
     function render() {
@@ -461,32 +484,9 @@ export default function MaterialCar() {
             }
         }
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
-        if (settings['outlinePass']) {
-            // composer.render();
-            
-            // scene.traverse(darkenNonBloomed);
+        renderer.render(scene, camera);
+        if (composer && composer.passes.length > 0) {
             composer.render();
-            // scene.traverse(restoreMaterial);
-            // render the entire scene, then render bloom scene on top
-            // finalComposer.render();
-        } else {
-            renderer.render(scene, camera);
-        }
-    }
-
-    function darkenNonBloomed(obj) {
-        if (obj.isMesh && !obj.userData['bloom']) {
-            materials[obj.uuid] = obj.material;
-            obj.material = darkMaterial;
-            // obj.visible = false;
-        }
-    }
-
-    function restoreMaterial(obj) {
-        if (materials[obj.uuid]) {
-            obj.material = materials[obj.uuid];
-            // obj.visible = true;
-            delete materials[obj.uuid];
         }
     }
 
