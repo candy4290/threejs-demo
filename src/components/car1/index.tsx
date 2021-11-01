@@ -24,8 +24,7 @@ const anmations: {
     linePointsV3: THREE.Vector3[];
 }[] = [];
 
-const darkMaterial = new THREE.MeshBasicMaterial({ color: "black", opacity: 0 });
-const materials = {};
+let clickNum = 0;
 
 export default function MaterialCar() {
     const modalRef = useRef<{
@@ -308,11 +307,13 @@ export default function MaterialCar() {
         dat.GUI.TEXT_CLOSED = '关闭Controls';
         dat.GUI.TEXT_OPEN = '打开Controls';
         gui = new dat.GUI();
+        const folder4 = gui.addFolder('场景');
         const folder0 = gui.addFolder('轨迹');
         const folder1 = gui.addFolder('车辆状态');
         const folder2 = gui.addFolder('视角');
         const folder3 = gui.addFolder('后期处理');
         settings = {
+            '背景色': '#000000',
             '轨迹列表': '轨迹1',
             '轨迹动画': false,
             '暂停': () => {
@@ -332,6 +333,9 @@ export default function MaterialCar() {
         }
         stopContinueControls.push(folder1.add(settings, '暂停'));
         stopContinueControls.push(folder1.add(settings, '继续'));
+        folder4.addColor(settings, '背景色').onChange(e => {
+            scene.background = new THREE.Color(e);
+        })
         folder0.add(settings, '轨迹列表').options(['轨迹1', '轨迹2']).onChange(e => {
             traceRelated.forEach(item => {
                 scene.remove(item);
@@ -368,6 +372,7 @@ export default function MaterialCar() {
             }
         });
         folder3.add(settings, '抗锯齿').onChange(e => {
+            clickNum++;
             if (e && composer) {
                 effectFXAA = createFxaa(composer).effectFXAA;
                 if (settings['泛光']) {
@@ -380,6 +385,7 @@ export default function MaterialCar() {
                 composer?.removePass(effectFXAA);
             }
         });
+        folder4.open();
         folder0.open();
         folder1.open();
         folder2.open();
@@ -484,9 +490,13 @@ export default function MaterialCar() {
             }
         }
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
-        renderer.render(scene, camera);
         if (composer && composer.passes.length > 0) {
+            if (clickNum === 1) {
+                renderer.render(scene, camera);
+            }
             composer.render();
+        } else {
+            renderer.render(scene, camera);
         }
     }
 

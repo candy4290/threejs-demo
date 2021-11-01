@@ -10,7 +10,6 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { createAbstractBuilder } from 'typescript';
 
 /**
  * 创建初始composer&
@@ -145,7 +144,8 @@ export function createUnrealBloomPass(composer: EffectComposer, scene: THREE.Sce
  */
 export function createFxaa(composer: EffectComposer) {
   const effectFXAA = new ShaderPass(FXAAShader) /* 自定义的着色器通道 作为参数 */
-  effectFXAA.material.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight)
+  effectFXAA.material.uniforms.resolution.value.set(1 / window.innerWidth, 1 / window.innerHeight);
+  effectFXAA.renderToScreen = true;
   composer.addPass(effectFXAA);
   return {
     composer, effectFXAA
