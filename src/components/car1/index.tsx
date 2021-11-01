@@ -24,8 +24,6 @@ const anmations: {
     linePointsV3: THREE.Vector3[];
 }[] = [];
 
-let clickNum = 0;
-
 export default function MaterialCar() {
     const modalRef = useRef<{
         matLine: LineMaterial,
@@ -219,7 +217,7 @@ export default function MaterialCar() {
             mesh.rotation.x = - Math.PI / 2;
             mesh.renderOrder = 2;
             scene.add(carModel);
-            // light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
+            light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
         });
     }
 
@@ -313,6 +311,7 @@ export default function MaterialCar() {
         const folder2 = gui.addFolder('视角');
         const folder3 = gui.addFolder('后期处理');
         settings = {
+            '天空盒': '',
             '背景色': '#000000',
             '轨迹列表': '轨迹1',
             '轨迹动画': false,
@@ -333,9 +332,12 @@ export default function MaterialCar() {
         }
         stopContinueControls.push(folder1.add(settings, '暂停'));
         stopContinueControls.push(folder1.add(settings, '继续'));
-        folder4.addColor(settings, '背景色').onChange(e => {
+        stopContinueControls.push(folder4.addColor(settings, '背景色').onChange(e => {
             scene.background = new THREE.Color(e);
-        })
+        }))
+        stopContinueControls.push(folder4.add(settings, '天空盒').options(['盒1']).onChange(e => {
+            scene.background = createSkyBox();
+        }));
         folder0.add(settings, '轨迹列表').options(['轨迹1', '轨迹2']).onChange(e => {
             traceRelated.forEach(item => {
                 scene.remove(item);
@@ -367,20 +369,30 @@ export default function MaterialCar() {
         folder3.add(settings, '泛光').onChange(e => {
             if (e && composer) {
                 outlinePass = createOutLine(composer, renderer, scene, camera).outlinePass;
+                if (settings['轨迹光效']) { /* 轨迹光效在最后一个处理 */
+                    composer?.removePass(bloomPass);
+                    bloomPass = createUnrealBloomPass(composer, scene, camera, renderer, needBloomed).bloomPass;
+                }
             } else {
                 composer?.removePass(outlinePass);
             }
         });
         folder3.add(settings, '抗锯齿').onChange(e => {
-            clickNum++;
             if (e && composer) {
+                const _composer = composer;
                 effectFXAA = createFxaa(composer).effectFXAA;
-                if (settings['泛光']) {
-                    outlinePass = createOutLine(composer, renderer, scene, camera).outlinePass;
-                }
-                if (settings['轨迹光效']) {
-                    bloomPass = createUnrealBloomPass(composer, scene, camera, renderer, needBloomed).bloomPass;
-                }
+                const t$ = setTimeout(() => { /* 临时用来解决抗锯齿导致页面变暗问题 */
+                    if (settings['泛光']) {
+                        composer?.removePass(outlinePass);
+                        outlinePass = createOutLine(_composer, renderer, scene, camera).outlinePass;
+                    }
+                    if (settings['轨迹光效']) {
+                        composer?.removePass(bloomPass);
+                        bloomPass = createUnrealBloomPass(_composer, scene, camera, renderer, needBloomed).bloomPass;
+                    }
+                    renderer.render(scene, camera);
+                    clearTimeout(t$);
+                }, 100);
             } else {
                 composer?.removePass(effectFXAA);
             }
@@ -490,10 +502,8 @@ export default function MaterialCar() {
             }
         }
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
-        if (composer && composer.passes.length > 0) {
-            if (clickNum === 1) {
-                renderer.render(scene, camera);
-            }
+        
+        if (composer && composer.passes.length > 1) {
             composer.render();
         } else {
             renderer.render(scene, camera);
