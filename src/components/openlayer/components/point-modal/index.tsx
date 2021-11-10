@@ -7,7 +7,7 @@ import Feature from "ol/Feature";
 import Point from 'ol/geom/Point';
 
 export default function PointModal(props: {currentPointFeature: Feature<Point> | undefined, mapInstance: Map, update: () => void}) {
-    const {currentPointFeature, mapInstance, update} = props;
+    const {currentPointFeature, update} = props;
     const [form] = Form.useForm();
     const [title, setTitle] = useState('未命名');
 

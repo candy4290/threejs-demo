@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Map from 'ol/Map';
-import { initMapBD09, initMap, drawLine, sadian, gcj02towgs84, addDrawLayer, styles } from '../../utils/map';
+import { initMapBD09, initMap, drawLine, sadian, gcj02towgs84, addDrawLayer, styles, wgs84togcj02 } from '../../utils/map';
 import './index.less';
 import { useClickAway } from "ahooks";
 import Overlay from "ol/Overlay";
@@ -76,12 +76,18 @@ export default function MapTest() {
                 }))
                 e.feature.setStyle(styles);
                 e.feature.set('modalVisible', true)
+                const points = e.feature.getGeometry().getCoordinates().map(item => {
+                    return toLonLat(item);
+                });
+                console.log('绘制后的路径（高德）:' + JSON.stringify(points))
                 mapRef.current.currentLineFeature = e.feature;
                 mapRef.current.drawInfo.drawLine.setActive(false);
                 update();
                 break;
             case 'Point':
                 e.feature.set('modalVisible', true);
+                const point = toLonLat(e.feature.getGeometry().getCoordinates());
+                console.log('绘制后的点位（高德）:' + JSON.stringify(point));
                 mapRef.current.currentPointFeature = e.feature;
                 mapRef.current.drawInfo.drawPoint.setActive(false);
                 update();

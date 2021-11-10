@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { register } from 'ol/proj/proj4';
-import { fromLonLat, transform, get } from 'ol/proj'; // 用来转换投影坐标系
+import { fromLonLat, transform, get, toLonLat } from 'ol/proj'; // 用来转换投影坐标系
 import { Group as LayerGroup } from 'ol/layer'; // 图层
 import TileLayer from 'ol/layer/Tile';
 import { XYZ } from 'ol/source';
@@ -237,9 +237,13 @@ export function sadian(position: number[], mapIns: Map, isMkt?: boolean, img?: a
 
 /* 画线 */
 export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
+  const t: number[][] = [];
   positions = positions.map(item => {
-    return fromLonLat(wgs84togcj02(item[0], item[1]))
+    const a = wgs84togcj02(item[0], item[1]);
+    t.push(a);
+    return fromLonLat(a)
   });
+  console.log('路径点位（高德）:' + JSON.stringify(t))
   const feature = new Feature({
     geometry: new LineString(positions)
   });
@@ -263,6 +267,12 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
     }),
   }));
   const modify = new Modify({source: source});
+  modify.on('modifyend', e => {
+    const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
+      return toLonLat(item);
+    })
+    console.log('更新后的路径（高德）:' + JSON.stringify(points))
+  })
   mapIns.addInteraction(modify);
   return feature;
 }
@@ -302,6 +312,18 @@ export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) 
   drawLine.setActive(false);
 
   const modify = new Modify({source: source});
+  modify.on('modifyend', e => {
+    const type = e.features.getArray()[0].getGeometry()?.getType();
+    if (type === 'LineString') {
+      const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
+        return toLonLat(item);
+      })
+      console.log('更新后的路径（高德）:' + JSON.stringify(points))
+    } else {
+      const temp = toLonLat((e.features.getArray()[0].getGeometry() as Point).getCoordinates())
+      console.log('更新后的点位（高德）:' + JSON.stringify(temp));
+    }
+  })
   mapInstance.addInteraction(modify);
 
   return {
