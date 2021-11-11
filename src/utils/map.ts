@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import { register } from 'ol/proj/proj4';
-import { fromLonLat, transform, get, toLonLat } from 'ol/proj'; // 用来转换投影坐标系
+import { fromLonLat, transform, toLonLat } from 'ol/proj'; // 用来转换投影坐标系
 import { Group as LayerGroup } from 'ol/layer'; // 图层
 import TileLayer from 'ol/layer/Tile';
 import { XYZ } from 'ol/source';
@@ -11,9 +11,9 @@ import TileImage from 'ol/source/TileImage';
 import TileGrid from 'ol/tilegrid/TileGrid';
 import * as olControl from 'ol/control';
 import DoubleClickZoom from 'ol/interaction/DoubleClickZoom';
-import TileDebug from 'ol/source/TileDebug';
+// import TileDebug from 'ol/source/TileDebug';
 import proj4 from 'proj4';
-import { Icon, Stroke, Style } from 'ol/style';
+import { Icon, Stroke, Style, Text } from 'ol/style';
 import { Vector as VectorLayer } from 'ol/layer';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
@@ -21,9 +21,11 @@ import VectorSource from 'ol/source/Vector';
 import LineString from 'ol/geom/LineString';
 import Overlay from 'ol/Overlay';
 import { uniqueId } from 'lodash';
-import Geometry from 'ol/geom/Geometry';
+// import Geometry from 'ol/geom/Geometry';
 import { Draw, Modify } from 'ol/interaction';
 import { DrawEvent } from 'ol/interaction/Draw';
+import Fill from 'ol/style/Fill';
+import CircleStyle from 'ol/style/Circle';
 /* openlayer中，使用高德底图，所有坐标均为jcg02坐标 */
 
 const PI = 3.1415926535897932384626;
@@ -266,7 +268,32 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
       width: 8,
     }),
   }));
-  const modify = new Modify({source: source});
+  const style = new Style({
+    image: new CircleStyle({
+      radius: 10,
+      stroke: new Stroke({
+        color: '#C1E4FF',
+        width: 2,
+      }),
+      fill: new Fill({
+        color: '#577EFF',
+      }),
+    }),
+    text: new Text({
+      text: '拖拽更新',
+      font: '14px Calibri,sans-serif',
+      fill: new Fill({
+        color: 'rgba(255, 255, 255, 1)',
+      }),
+      backgroundFill: new Fill({
+        color: 'rgba(0, 0, 0, 0.7)',
+      }),
+      padding: [2, 2, 2, 2],
+      textAlign: 'left',
+      offsetX: 15,
+    }),
+  })
+  const modify = new Modify({ source: source, style });
   modify.on('modifyend', e => {
     const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
       return toLonLat(item);
@@ -281,37 +308,63 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
 export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) {
   const source = new VectorSource();
   const vector = new VectorLayer({
-      source,
-      style: new Style({
-          stroke: new Stroke({
-              color: '#666666',
-              width: 8,
-          }),
-          image: new Icon({
-              anchor: [0.5, 1],
-              src: '/icon.png',
-            })
+    source,
+    style: new Style({
+      stroke: new Stroke({
+        color: '#666666',
+        width: 8,
       }),
+      image: new Icon({
+        anchor: [0.5, 1],
+        src: '/icon.png',
+      })
+    }),
   });
   mapInstance.addLayer(vector);
 
   const drawPoint = new Draw({
-      source,
-      type: 'Point'
+    source,
+    type: 'Point'
   });
   mapInstance.addInteraction(drawPoint);
   drawPoint.on('drawend', drawEnd);
   drawPoint.setActive(false);
 
   const drawLine = new Draw({
-      source,
-      type: 'LineString'
+    source,
+    type: 'LineString'
   });
   mapInstance.addInteraction(drawLine);
   drawLine.on('drawend', drawEnd);
   drawLine.setActive(false);
 
-  const modify = new Modify({hitDetection: vector, source: source});
+  const style = new Style({
+    image: new CircleStyle({
+      radius: 8,
+      stroke: new Stroke({
+        color: '#C1E4FF',
+        width: 2,
+      }),
+      fill: new Fill({
+        color: '#577EFF',
+      }),
+    }),
+    text: new Text({
+      text: '拖拽更新',
+      font: '14px Calibri,sans-serif',
+      fill: new Fill({
+        color: 'rgba(255, 255, 255, 1)',
+      }),
+      backgroundFill: new Fill({
+        color: 'rgba(0, 0, 0, 0.7)',
+      }),
+      padding: [2, 2, 2, 2],
+      textAlign: 'left',
+      offsetX: 15,
+    }),
+  })
+
+  const modify = new Modify({ hitDetection: vector, source: source, style });
   modify.on('modifyend', e => {
     const type = e.features?.getArray()[0]?.getGeometry()?.getType();
     if (type === 'LineString') {
@@ -377,7 +430,7 @@ export function tipOverlay(mapIns: Map) {
   const tipOverlay = new Overlay({
     id: 'tip-map',
     element: document.getElementById('tip-map') as any,
-    offset: [8,-16]
+    offset: [8, -16]
   });
   mapIns.addOverlay(tipOverlay);
   console.log(mapIns.getInteractions().getArray())
