@@ -27,6 +27,7 @@ import { DrawEvent } from 'ol/interaction/Draw';
 import Fill from 'ol/style/Fill';
 import CircleStyle from 'ol/style/Circle';
 /* openlayer中，使用高德底图，所有坐标均为jcg02坐标 */
+import {getLength} from 'ol/sphere';
 
 const PI = 3.1415926535897932384626;
 const a = 6378245.0;
@@ -109,7 +110,8 @@ export function initMap(targetId: string): { mapIns: Map, menuOverlay: Overlay }
           new TileLayer({
             source: new XYZ({
               // 高德底图
-              // url: `https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`
+              // url: `http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x} ` /* 深蓝夜色;到了17级就没了--- */
+              // url: `https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}` /* 高德亮色 */
               url: 'http://172.20.62.119:60000/nodejs-wapian/shanghai/pachong/{z}/{y}/{x}.png '
               // url: process.env.REACT_APP_MAP_LOAD_SOURCE2,
             })
@@ -144,6 +146,7 @@ export function initMap(targetId: string): { mapIns: Map, menuOverlay: Overlay }
     map_ins.removeInteraction(dblClickInteraction);
   }
   tipOverlay(map_ins);
+  sadian([121.547734,31.253428], map_ins)
   return { mapIns: map_ins, menuOverlay: rightClickMenu(map_ins) };
 }
 
@@ -237,6 +240,17 @@ export function sadian(position: number[], mapIns: Map, isMkt?: boolean, img?: a
   mapIns.addLayer(vectorLayer);
 }
 
+export const formatLength = function (line: LineString) {
+  const length = getLength(line);
+  let output: string;
+  if (length > 100) {
+    output = Math.round((length / 1000) * 100) / 100 + ' km';
+  } else {
+    output = Math.round(length * 100) / 100 + ' m';
+  }
+  return output;
+};
+
 /* 画线 */
 export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
   const t: number[][] = [];
@@ -249,6 +263,10 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
   const feature = new Feature({
     geometry: new LineString(positions)
   });
+  const line = feature.getGeometry();
+  if (line) {
+    console.log('路径长度:' + formatLength(line))
+  }
   const source = new VectorSource({
     features: [feature],
   })
@@ -295,10 +313,14 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
   })
   const modify = new Modify({ source: source, style });
   modify.on('modifyend', e => {
-    const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
+    const line =  (e.features.getArray()[0].getGeometry() as LineString);
+    const points = line.getCoordinates().map(item => {
       return toLonLat(item);
     })
     console.log('更新后的路径（高德）:' + JSON.stringify(points))
+    if (line) {
+      console.log('路径长度:' + formatLength(line))
+    }
   })
   mapIns.addInteraction(modify);
   return feature;
@@ -372,6 +394,7 @@ export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) 
         return toLonLat(item);
       })
       console.log('更新后的路径（高德）:' + JSON.stringify(points))
+      console.log('路径长度:' + formatLength(e.features.getArray()[0].getGeometry() as LineString))
     } else if (type === 'Point') {
       const temp = toLonLat((e.features.getArray()[0].getGeometry() as Point).getCoordinates())
       console.log('更新后的点位（高德）:' + JSON.stringify(temp));
@@ -433,7 +456,6 @@ export function tipOverlay(mapIns: Map) {
     offset: [8, -16]
   });
   mapIns.addOverlay(tipOverlay);
-  console.log(mapIns.getInteractions().getArray())
   mapIns.on('pointermove', ev => {
     const flag = mapIns.getInteractions().getArray().filter(item => {
       return item instanceof Draw && item.getActive()

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Map from 'ol/Map';
-import { initMapBD09, initMap, drawLine, sadian, gcj02towgs84, addDrawLayer, styles, wgs84togcj02 } from '../../utils/map';
+import { initMapBD09, initMap, drawLine, sadian, gcj02towgs84, addDrawLayer, styles, formatLength } from '../../utils/map';
 import './index.less';
 import { useClickAway } from "ahooks";
 import Overlay from "ol/Overlay";
@@ -80,6 +80,7 @@ export default function MapTest() {
                     return toLonLat(item);
                 });
                 console.log('绘制后的路径（高德）:' + JSON.stringify(points))
+                console.log('路径长度:' + formatLength(e.feature.getGeometry()))
                 mapRef.current.currentLineFeature = e.feature;
                 mapRef.current.drawInfo.drawLine.setActive(false);
                 update();
