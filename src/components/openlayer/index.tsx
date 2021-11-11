@@ -18,7 +18,7 @@ import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Geometry from "ol/geom/Geometry";
 import { useUpdate } from 'ahooks';
-import {Draw} from 'ol/interaction';
+import { Draw, Modify } from 'ol/interaction';
 import { DrawEvent } from "ol/interaction/Draw";
 import Feature from "ol/Feature";
 import LineString from "ol/geom/LineString";
@@ -35,6 +35,7 @@ export default function MapTest() {
             drawPoint: Draw;
             drawLine: Draw;
             vector: VectorLayer<VectorSource<Geometry>>;
+            modify: Modify
         }
         drawLayer: VectorLayer<VectorSource<Geometry>>, /* 绘制图层 */
         mapInstance: Map, /* 地图实例 */
@@ -50,17 +51,16 @@ export default function MapTest() {
         }
     }, menuRef);
 
-
     useEffect(() => {
         init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-    
+
     function init() {
         const temp = initMap('kzKyk');
         mapRef.current.mapInstance = temp.mapIns;
         mapRef.current.menuOverlay = temp.menuOverlay;
-        
+
         mapRef.current.drawInfo = addDrawLayer(mapRef.current.mapInstance, drawEnd);
     }
 
@@ -70,8 +70,8 @@ export default function MapTest() {
             case 'LineString':
                 e.feature.set('lineStyle', new Style({
                     stroke: new Stroke({
-                      color: '#666666',
-                      width: 8,
+                        color: '#666666',
+                        width: 8,
                     }),
                 }))
                 e.feature.setStyle(styles);
@@ -104,7 +104,7 @@ export default function MapTest() {
             })[0];
             mapRef.current.menuOverlay.setPosition(undefined);
             if (startPoint) {
-                mapRef.current.mapInstance.removeLayer(startPoint);    
+                mapRef.current.mapInstance.removeLayer(startPoint);
             }
             sadian(start, mapRef.current.mapInstance, true, StartPointImg, 'startPoint');
             getStartAndEndPoints();
@@ -120,7 +120,7 @@ export default function MapTest() {
             })[0];
             mapRef.current.menuOverlay.setPosition(undefined);
             if (passPoint) {
-                mapRef.current.mapInstance.removeLayer(passPoint);    
+                mapRef.current.mapInstance.removeLayer(passPoint);
             }
             sadian(point, mapRef.current.mapInstance, true, PassPointImg, 'passPoint');
             getStartAndEndPoints();
@@ -136,7 +136,7 @@ export default function MapTest() {
             })[0];
             mapRef.current.menuOverlay.setPosition(undefined);
             if (endPoint) {
-                mapRef.current.mapInstance.removeLayer(endPoint);    
+                mapRef.current.mapInstance.removeLayer(endPoint);
             }
             sadian(end, mapRef.current.mapInstance, true, EndPointImg, 'endPoint');
             getStartAndEndPoints();
@@ -161,7 +161,7 @@ export default function MapTest() {
             passPointsPositions += `&point=${item.reverse().join(',')}`
         })
         if (points.length === 2) { /* 起始点都有了 */
-            const startEndPosition = (points[0].get('id') === 'startPoint' ? [points[0].get('position'),points[1].get('position')] : [points[1].get('position'), points[0].get('position')]).map((item: any) => {
+            const startEndPosition = (points[0].get('id') === 'startPoint' ? [points[0].get('position'), points[1].get('position')] : [points[1].get('position'), points[0].get('position')]).map((item: any) => {
                 const temp = toLonLat(item);
                 return gcj02towgs84(temp[0], temp[1])
             });
@@ -185,36 +185,42 @@ export default function MapTest() {
         }
     }
 
+    /* 标点 */
     function drawSelfPoint() {
         const flag = mapRef.current.drawInfo.drawPoint.getActive();
+        console.log(flag)
         if (!flag) {
             mapRef.current.drawInfo.drawLine.setActive(false);
         }
         mapRef.current.drawInfo.drawPoint.setActive(!flag);
+        update();
     }
 
+    /* 标线 */
     function drawSelfLine() {
         const flag = mapRef.current.drawInfo.drawLine.getActive();
+        console.log(flag)
         if (!flag) {
             mapRef.current.drawInfo.drawPoint.setActive(false);
         }
         mapRef.current.drawInfo.drawLine.setActive(!flag);
+        update();
     }
 
-    /* 清除人为加入的图层 */
+    /* 清除人为加入的元素 */
     function empty() {
         const temp = mapRef.current.mapInstance.getLayers().getArray().filter(item => {
             return !!item.get('belong');
         })
         temp.forEach(item => {
+            if (item && item instanceof VectorLayer) {
+                item.getSource().clear();
+            }
             mapRef.current.mapInstance.removeLayer(item);
         });
 
-        /* 清除绘制图层上的内容 */
         const drawSource = mapRef.current.drawInfo.vector.getSource();
-        drawSource.forEachFeature(item => {
-            drawSource.removeFeature(item);
-        });
+        drawSource.clear(); /* /* 清除绘制图层上的内容 */
 
         /* 置空当前线段feature */
         mapRef.current.currentLineFeature = undefined;
@@ -224,13 +230,16 @@ export default function MapTest() {
     return (
         <div className='map-container'>
             <div className='main-map' id='kzKyk'></div>
+            {
+                console.log('重新渲染:' + mapRef.current.drawInfo?.drawPoint.getActive())
+            }
             {/* 地图工具 */}
             <div className='tools'>
                 <Tooltip title="标点" placement="left">
-                    <img src={PointImg} alt='' onClick={drawSelfPoint} />
+                    <img src={PointImg} alt='' onClick={drawSelfPoint} style={{background: mapRef.current.drawInfo?.drawPoint.getActive() ? '#ddd' : 'none'}} />
                 </Tooltip>
                 <Tooltip title="标线" placement="left">
-                    <img src={LineImg} alt='' onClick={drawSelfLine} />
+                    <img src={LineImg} alt='' onClick={drawSelfLine} style={{background: mapRef.current.drawInfo?.drawLine.getActive() ? '#ddd' : 'none'}} />
                 </Tooltip>
                 <Tooltip title="清空" placement="left">
                     <img src={EmptyImg} alt='' onClick={empty} />
@@ -253,17 +262,33 @@ export default function MapTest() {
                     <span>设为终点</span>
                 </div>
             </div>
+            {/* 操作提示 */}
+            <div className="ant-tooltip ant-tooltip-placement-right" id='tip-map'>
+                <div className="ant-tooltip-content">
+                    <div className="ant-tooltip-arrow">
+                        <span className="ant-tooltip-arrow-content"></span>
+                    </div>
+                    {
+                        mapRef.current.drawInfo?.drawPoint.getActive() &&
+                        <div className="ant-tooltip-inner" role="tooltip">单击标点</div>
+                    }
+                    {
+                        mapRef.current.drawInfo?.drawLine.getActive() &&
+                        <div className="ant-tooltip-inner" role="tooltip">单击选择,双击结束</div>
+                    }
+                </div>
+            </div>
             {/* 标线 */
                 mapRef.current.currentLineFeature && mapRef.current.currentLineFeature.get('modalVisible') &&
-                <LineModal 
-                mapInstance={mapRef.current.mapInstance}
-                currentLineFeature={mapRef.current.currentLineFeature} update={update} />
+                <LineModal
+                    mapInstance={mapRef.current.mapInstance}
+                    currentLineFeature={mapRef.current.currentLineFeature} update={update} />
             }
             {/* 标点 */
                 mapRef.current.currentPointFeature && mapRef.current.currentPointFeature.get('modalVisible') &&
-                <PointModal 
-                mapInstance={mapRef.current.mapInstance}
-                currentPointFeature={mapRef.current.currentPointFeature} update={update} />
+                <PointModal
+                    mapInstance={mapRef.current.mapInstance}
+                    currentPointFeature={mapRef.current.currentPointFeature} update={update} />
             }
         </div>
     )

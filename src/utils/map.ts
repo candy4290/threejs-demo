@@ -108,7 +108,7 @@ export function initMap(targetId: string): { mapIns: Map, menuOverlay: Overlay }
             source: new XYZ({
               // 高德底图
               // url: `https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}`
-              url: 'http://172.20.62.119:60000/nodejs-wapian/pachong/{z}/{y}/{x}.png '
+              url: 'http://172.20.62.119:60000/nodejs-wapian/shanghai/pachong/{z}/{y}/{x}.png '
               // url: process.env.REACT_APP_MAP_LOAD_SOURCE2,
             })
           }),
@@ -141,7 +141,7 @@ export function initMap(targetId: string): { mapIns: Map, menuOverlay: Overlay }
   if (dblClickInteraction) {
     map_ins.removeInteraction(dblClickInteraction);
   }
-  sadian([121.663948, 31.09034], map_ins);
+  tipOverlay(map_ins);
   return { mapIns: map_ins, menuOverlay: rightClickMenu(map_ins) };
 }
 
@@ -311,15 +311,15 @@ export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) 
   drawLine.on('drawend', drawEnd);
   drawLine.setActive(false);
 
-  const modify = new Modify({source: source});
+  const modify = new Modify({hitDetection: vector, source: source});
   modify.on('modifyend', e => {
-    const type = e.features.getArray()[0].getGeometry()?.getType();
+    const type = e.features?.getArray()[0]?.getGeometry()?.getType();
     if (type === 'LineString') {
       const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
         return toLonLat(item);
       })
       console.log('更新后的路径（高德）:' + JSON.stringify(points))
-    } else {
+    } else if (type === 'Point') {
       const temp = toLonLat((e.features.getArray()[0].getGeometry() as Point).getCoordinates())
       console.log('更新后的点位（高德）:' + JSON.stringify(temp));
     }
@@ -327,7 +327,7 @@ export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) 
   mapInstance.addInteraction(modify);
 
   return {
-    drawPoint, drawLine, vector
+    drawPoint, drawLine, vector, modify
   };
 }
 
@@ -371,6 +371,26 @@ export const styles = (feature, resolution) => {
     })
   }
   return styles;
+}
+
+export function tipOverlay(mapIns: Map) {
+  const tipOverlay = new Overlay({
+    id: 'tip-map',
+    element: document.getElementById('tip-map') as any,
+    offset: [8,-16]
+  });
+  mapIns.addOverlay(tipOverlay);
+  console.log(mapIns.getInteractions().getArray())
+  mapIns.on('pointermove', ev => {
+    const flag = mapIns.getInteractions().getArray().filter(item => {
+      return item instanceof Draw && item.getActive()
+    }).length > 0;
+    if (flag) {
+      tipOverlay.setPosition(ev.coordinate)
+    } else {
+      tipOverlay.setPosition(undefined);
+    }
+  })
 }
 
 /**
