@@ -259,7 +259,7 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
     t.push(a);
     return fromLonLat(a)
   });
-  console.log('路径点位（高德）:' + JSON.stringify(t))
+  console.log('路径点位（GCJ-02）:' + JSON.stringify(t))
   const feature = new Feature({
     geometry: new LineString(positions)
   });
@@ -317,7 +317,7 @@ export function drawLine(positions: number[][], mapIns: Map, lineId?: string) {
     const points = line.getCoordinates().map(item => {
       return toLonLat(item);
     })
-    console.log('更新后的路径（高德）:' + JSON.stringify(points))
+    console.log('更新后的路径（GCJ-02）:' + JSON.stringify(points))
     if (line) {
       console.log('路径长度:' + formatLength(line))
     }
@@ -393,11 +393,11 @@ export function addDrawLayer(mapInstance: Map, drawEnd: (e: DrawEvent) => void) 
       const points = (e.features.getArray()[0].getGeometry() as LineString).getCoordinates().map(item => {
         return toLonLat(item);
       })
-      console.log('更新后的路径（高德）:' + JSON.stringify(points))
+      console.log('更新后的路径（GCJ-02）:' + JSON.stringify(points))
       console.log('路径长度:' + formatLength(e.features.getArray()[0].getGeometry() as LineString))
     } else if (type === 'Point') {
       const temp = toLonLat((e.features.getArray()[0].getGeometry() as Point).getCoordinates())
-      console.log('更新后的点位（高德）:' + JSON.stringify(temp));
+      console.log('更新后的点位（GCJ-02）:' + JSON.stringify(temp));
     }
   })
   mapInstance.addInteraction(modify);

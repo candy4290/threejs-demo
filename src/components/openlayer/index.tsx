@@ -79,7 +79,7 @@ export default function MapTest() {
                 const points = e.feature.getGeometry().getCoordinates().map(item => {
                     return toLonLat(item);
                 });
-                console.log('绘制后的路径（高德）:' + JSON.stringify(points))
+                console.log('绘制后的路径（GCJ-02）:' + JSON.stringify(points))
                 console.log('路径长度:' + formatLength(e.feature.getGeometry()))
                 mapRef.current.currentLineFeature = e.feature;
                 mapRef.current.drawInfo.drawLine.setActive(false);
@@ -88,7 +88,7 @@ export default function MapTest() {
             case 'Point':
                 e.feature.set('modalVisible', true);
                 const point = toLonLat(e.feature.getGeometry().getCoordinates());
-                console.log('绘制后的点位（高德）:' + JSON.stringify(point));
+                console.log('绘制后的点位（GCJ-02）:' + JSON.stringify(point));
                 mapRef.current.currentPointFeature = e.feature;
                 mapRef.current.drawInfo.drawPoint.setActive(false);
                 update();
@@ -231,9 +231,6 @@ export default function MapTest() {
     return (
         <div className='map-container'>
             <div className='main-map' id='kzKyk'></div>
-            {
-                console.log('重新渲染:' + mapRef.current.drawInfo?.drawPoint.getActive())
-            }
             {/* 地图工具 */}
             <div className='tools'>
                 <Tooltip title="标点" placement="left">
