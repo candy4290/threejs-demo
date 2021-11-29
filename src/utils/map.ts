@@ -651,12 +651,6 @@ export function tipOverlay(mapIns: Map) {
   })
 }
 
-export function getRotation(point1: number[], point2: number[]) {
-  const dx = point2[0] - point1[0];
-  const dy = point2[1] - point1[1];
-  return Math.atan2(dy, dx);
-}
-
 /**
  * 鼠标右键出现菜单
  *

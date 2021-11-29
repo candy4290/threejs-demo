@@ -45,6 +45,8 @@ export default function MapTest() {
         currentPointFeature: Feature<Point> | undefined /* 当前点位的Feature */
     }>({} as any);
 
+    const t = 
+
 
     useEffect(() => {
         init();

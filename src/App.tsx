@@ -4,9 +4,9 @@ import { useRef } from 'react';
 import { useEffect } from 'react';
 
 // import Stats from 'stats.js';
-import MapTest from './components/openlayer';
+// import MapTest from './components/openlayer';
 // import UnrealBloom from './components/unreal-bloom';
-// import Car1 from './components/car1';
+import Car1 from './components/car1';
 // import Bloom from './components/bloom';
 import {BrowserCheck} from '@kzlib/kcomponents';
 
@@ -29,10 +29,10 @@ function App() {
 
   return (
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
-      {/* <Car1 /> */}
+      <Car1 />
       {/* <UnrealBloom /> */}
       {/* <Bloom /> */}
-      <MapTest />
+      {/* <MapTest /> */}
       {/* 检查适用的浏览器版本及型号 */}
       <BrowserCheck></BrowserCheck>
     </div>

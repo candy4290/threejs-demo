@@ -6,6 +6,7 @@
     "@babel/polyfill": "^7.12.1",
     "@craco/craco": "^6.1.2",
     "@kzlib/kcomponents": "1.0.0",
+    "@kzlib/khooks": "^1.0.2",
     "@kzlib/kmap": "^1.0.4",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",
