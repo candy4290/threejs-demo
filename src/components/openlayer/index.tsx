@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import Map from 'ol/Map';
-import { initMapBD09, initMap, drawLine, sadian, gcj02towgs84, addDrawLayer, styles, formatLength } from '../../utils/map';
+import { initMapBD09, drawLine, sadian, addDrawLayer, formatLength, tipOverlay, rightClickMenu } from '../../utils/map';
 import './index.less';
 import { useClickAway } from "ahooks";
 import Overlay from "ol/Overlay";
@@ -25,6 +25,8 @@ import LineString from "ol/geom/LineString";
 import { Stroke, Style } from "ol/style";
 import Point from "ol/geom/Point";
 import PointModal from "./components/point-modal";
+import { gcj02towgs84, TraceAnimate, initMap } from "@kzlib/kmap";
+import RightMenu from "./components/right-menu";
 
 /* openlayer地图开发 */
 export default function MapTest() {
@@ -37,19 +39,12 @@ export default function MapTest() {
             vector: VectorLayer<VectorSource<Geometry>>;
             modify: Modify
         }
-        drawLayer: VectorLayer<VectorSource<Geometry>>, /* 绘制图层 */
         mapInstance: Map, /* 地图实例 */
         menuOverlay: Overlay, /* contextMenu的overlay */
         currentLineFeature: Feature<LineString> | undefined/* 当前线条的Feature */
         currentPointFeature: Feature<Point> | undefined /* 当前点位的Feature */
     }>({} as any);
 
-    const menuRef = useRef<any>();
-    useClickAway(() => {
-        if (mapRef.current.menuOverlay) {
-            mapRef.current.menuOverlay.setPosition(undefined);
-        }
-    }, menuRef);
 
     useEffect(() => {
         init();
@@ -57,11 +52,14 @@ export default function MapTest() {
     }, []);
 
     function init() {
-        const temp = initMap('kzKyk');
-        mapRef.current.mapInstance = temp.mapIns;
-        mapRef.current.menuOverlay = temp.menuOverlay;
-
+        // url: `http://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x} ` /* 深蓝夜色;到了17级就没了--- */
+        // url: `https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}` /* 高德亮色 */
+        // url: 'http://172.20.62.119:60000/nodejs-wapian/shanghai/pachong/{z}/{y}/{x}.png '
+        mapRef.current.mapInstance = initMap('kzKyk', [121.24370643004204, 31.36215757687218], ['https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}']);
+        tipOverlay(mapRef.current.mapInstance);
+        mapRef.current.menuOverlay = rightClickMenu(mapRef.current.mapInstance);
         mapRef.current.drawInfo = addDrawLayer(mapRef.current.mapInstance, drawEnd);
+        update();
     }
 
     function drawEnd(e: DrawEvent) {
@@ -74,7 +72,7 @@ export default function MapTest() {
                         width: 8,
                     }),
                 }))
-                e.feature.setStyle(styles);
+                e.feature.setStyle(TraceAnimate.stylesGlobal);
                 e.feature.set('modalVisible', true)
                 const points = e.feature.getGeometry().getCoordinates().map(item => {
                     return toLonLat(item);
@@ -93,96 +91,6 @@ export default function MapTest() {
                 mapRef.current.drawInfo.drawPoint.setActive(false);
                 update();
                 break;
-        }
-    }
-
-    /* 设置起点 */
-    function setStartPoint() {
-        const start = mapRef.current.menuOverlay.getPosition();
-        if (start) {
-            const startPoint = mapRef.current.mapInstance.getLayers().getArray().filter(item => {
-                return item.get('id') === 'startPoint'
-            })[0];
-            mapRef.current.menuOverlay.setPosition(undefined);
-            if (startPoint) {
-                mapRef.current.mapInstance.removeLayer(startPoint);
-            }
-            sadian(start, mapRef.current.mapInstance, true, StartPointImg, 'startPoint');
-            getStartAndEndPoints();
-        }
-    }
-
-    // /* 设为途径点 */
-    function setPassPoint() {
-        const point = mapRef.current.menuOverlay.getPosition();
-        if (point) {
-            const passPoint = mapRef.current.mapInstance.getLayers().getArray().filter(item => {
-                return item.get('id') === 'passPoint'
-            })[0];
-            mapRef.current.menuOverlay.setPosition(undefined);
-            if (passPoint) {
-                mapRef.current.mapInstance.removeLayer(passPoint);
-            }
-            sadian(point, mapRef.current.mapInstance, true, PassPointImg, 'passPoint');
-            getStartAndEndPoints();
-        }
-    }
-
-    /* 设置终点 */
-    function setEndPoint() {
-        const end = mapRef.current.menuOverlay.getPosition();
-        if (end) {
-            const endPoint = mapRef.current.mapInstance.getLayers().getArray().filter(item => {
-                return item.get('id') === 'endPoint'
-            })[0];
-            mapRef.current.menuOverlay.setPosition(undefined);
-            if (endPoint) {
-                mapRef.current.mapInstance.removeLayer(endPoint);
-            }
-            sadian(end, mapRef.current.mapInstance, true, EndPointImg, 'endPoint');
-            getStartAndEndPoints();
-        }
-    }
-
-    function getStartAndEndPoints() {
-        const points = mapRef.current.mapInstance.getLayers().getArray().filter(item => { /* 起始点图层 */
-            return item.get('id') === 'endPoint' || item.get('id') === 'startPoint'
-        });
-        const passPoints = mapRef.current.mapInstance.getLayers().getArray().filter(item => { /* 途径点 */
-            return item.get('id') === 'passPoint'
-        }).map(item => {
-            const temp = toLonLat(item.get('position'));
-            return gcj02towgs84(temp[0], temp[1]);
-        });
-        const daohangLine = mapRef.current.mapInstance.getLayers().getArray().filter(item => {
-            return item.get('id') === 'daohangline';
-        })[0];
-        let passPointsPositions = '';
-        passPoints.forEach(item => {
-            passPointsPositions += `&point=${item.reverse().join(',')}`
-        })
-        if (points.length === 2) { /* 起始点都有了 */
-            const startEndPosition = (points[0].get('id') === 'startPoint' ? [points[0].get('position'), points[1].get('position')] : [points[1].get('position'), points[0].get('position')]).map((item: any) => {
-                const temp = toLonLat(item);
-                return gcj02towgs84(temp[0], temp[1])
-            });
-            axios.get(
-                `http://172.20.62.117:8989/route?point=${startEndPosition[0].reverse().join(',')}${passPointsPositions}&point=${startEndPosition[1].reverse().join(',')}&type=json&locale=zh-CN&vehicle=car&weighting=fastest&points_encoded=false`
-            ).then(rsp => {
-                if (rsp.status + '' === '200') {
-                    const points = rsp.data.paths[0].points.coordinates;
-                    mapRef.current.mapInstance.getView().animate({
-                        center: fromLonLat(points[0]),
-                        zoom: 13.5
-                    })
-                    if (daohangLine) {
-                        mapRef.current.mapInstance.removeLayer(daohangLine);
-                    }
-                    mapRef.current.currentLineFeature = drawLine(points, mapRef.current.mapInstance, 'daohangline');
-                    mapRef.current.currentLineFeature.set('modalVisible', true);
-                    update();
-                }
-            })
         }
     }
 
@@ -244,22 +152,9 @@ export default function MapTest() {
                 </Tooltip>
             </div>
             {/* 右键ContextMenu菜单 */}
-            <div className="context-menu" id="context-menu" ref={menuRef}>
-                <div onClick={setStartPoint}>
-                    <img src={StartPointImg} alt='' />
-                    <span>设为起点</span>
-                </div>
-                <div className='split-line'></div>
-                <div onClick={setPassPoint}>
-                    <img src={PassPointImg} alt='' />
-                    <span>设为途径点</span>
-                </div>
-                <div className='split-line'></div>
-                <div onClick={setEndPoint}>
-                    <img src={EndPointImg} alt='' />
-                    <span>设为终点</span>
-                </div>
-            </div>
+            <RightMenu menuOverlay={mapRef.current.menuOverlay} 
+            mapInstance={mapRef.current.mapInstance}
+            update={update} currentLineFeature={mapRef.current.currentLineFeature} />
             {/* 操作提示 */}
             <div className="ant-tooltip ant-tooltip-placement-right" id='tip-map'>
                 <div className="ant-tooltip-content">

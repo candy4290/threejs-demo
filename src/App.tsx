@@ -1,3 +1,4 @@
+import '@babel/polyfill'
 import './App.less';
 import { useRef } from 'react';
 import { useEffect } from 'react';
@@ -7,6 +8,7 @@ import MapTest from './components/openlayer';
 // import UnrealBloom from './components/unreal-bloom';
 // import Car1 from './components/car1';
 // import Bloom from './components/bloom';
+import {BrowserCheck} from '@kzlib/kcomponents';
 
 function App() {
   const mainRef = useRef<HTMLDivElement>(null);
@@ -31,6 +33,8 @@ function App() {
       {/* <UnrealBloom /> */}
       {/* <Bloom /> */}
       <MapTest />
+      {/* 检查适用的浏览器版本及型号 */}
+      <BrowserCheck></BrowserCheck>
     </div>
   );
 }

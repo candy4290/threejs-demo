@@ -113,3 +113,35 @@ a, button, input, select {
 	margin-top: 20px;
 	padding: 10px;
 }
+.parent {
+	position: relative;
+}
+.point {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	background: red;
+	border-radius: 50%;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+.puffOut {
+	width: 20px;
+	height: 20px;
+	background: red;
+	border-radius: 50%;
+	animation: puffOut 1s infinite;
+}
+@keyframes puffOut {
+	0% {
+		opacity: .5;
+		transform-origin: 50% 50%;
+		transform: scale(1, 1);
+	}
+	100% {
+		opacity: 0;
+		transform-origin: 50% 50%;
+		transform: scale(5, 5);
+	}
+}
