@@ -133,7 +133,7 @@ export default function MaterialCar() {
         // // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
         composer = createComposerAndRenderPass(renderer, scene, camera).composer;
-        composer.readBuffer.texture.encoding = renderer.outputEncoding;
+        composer.readBuffer.texture.encoding = renderer.outputEncoding; /* 解决色差问题 */
 
         light = new THREE.DirectionalLight(0xffffff);
         light.position.set(20, 20, 20);
