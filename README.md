@@ -67,6 +67,10 @@ three.js中进行拖拽-----TransformControls+导出成gltf(将一个scene导出
 2.webgl_geometry_extrude_splines
 3.法线贴图
 
+fxaa效果一般、开销很小，无法解决线的锯齿问题，带来模糊
+SSAA：效果最好，开销太大
+taa: 有动画时失效
+
 
 ### jsx标签注释
  {

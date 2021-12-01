@@ -133,7 +133,6 @@ export default function MaterialCar() {
         // // scene.fog = new THREE.Fog(0xeeeeee, 10, 50);
 
         composer = createComposerAndRenderPass(renderer, scene, camera).composer;
-        composer.readBuffer.texture.encoding = renderer.outputEncoding;
 
         light = new THREE.DirectionalLight(0xffffff);
         light.position.set(20, 20, 20);
@@ -504,6 +503,7 @@ export default function MaterialCar() {
         controls?.update(); /* only required if controls.enableDamping = true, or if controls.autoRotate = true */
         
         if (composer && composer.passes.length > 1) {
+            composer.readBuffer.texture.encoding = renderer.outputEncoding;
             composer.render();
         } else {
             renderer.render(scene, camera);

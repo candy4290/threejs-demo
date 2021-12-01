@@ -1,0 +1,11 @@
+Model Information:
+* title:	Bridge Design
+* source:	https://sketchfab.com/3d-models/bridge-design-6c2d7e65a2e14600bde311a01e1baa27
+* author:	NDM 3Dtech (https://sketchfab.com/manhdtr)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Bridge Design" (https://sketchfab.com/3d-models/bridge-design-6c2d7e65a2e14600bde311a01e1baa27) by NDM 3Dtech (https://sketchfab.com/manhdtr) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -9,8 +9,10 @@ import { useEffect } from 'react';
 import Car1 from './components/car1';
 // import Bloom from './components/bloom';
 import {BrowserCheck} from '@kzlib/kcomponents';
-import Sea from './components/sea';
-import Light from './components/light';
+import Car2 from './components/car2';
+// import Sea from './components/sea';
+// import Light from './components/light';
+// import LightLine from './components/light-line';
 
 function App() {
   const mainRef = useRef<HTMLDivElement>(null);
@@ -31,9 +33,11 @@ function App() {
 
   return (
     <div className='kz-kyk' style={{height: '100%', width: '100%'}} ref={mainRef}>
+      {/* <LightLine /> */}
       {/* <Light /> */}
       {/* <Sea /> */}
-      <Car1 />
+      {/* <Car1 /> */}
+      <Car2 />
       {/* <UnrealBloom /> */}
       {/* <Bloom /> */}
       {/* <MapTest /> */}
