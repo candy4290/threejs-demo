@@ -6,10 +6,12 @@ import { useEffect } from 'react';
 // import Stats from 'stats.js';
 // import MapTest from './components/openlayer';
 // import UnrealBloom from './components/unreal-bloom';
-import Car1 from './components/car1';
+// import Car1 from './components/car1';
 // import Bloom from './components/bloom';
 import {BrowserCheck} from '@kzlib/kcomponents';
-import Car2 from './components/car2';
+// import Car2 from './components/car2';
+// import DrawLine from './components/draw-line';
+import DrawLine2 from './components/draw-line';
 // import Sea from './components/sea';
 // import Light from './components/light';
 // import LightLine from './components/light-line';
@@ -37,7 +39,9 @@ function App() {
       {/* <Light /> */}
       {/* <Sea /> */}
       {/* <Car1 /> */}
-      <Car2 />
+      {/* <Car2 /> */}
+      {/* <DrawLine /> */}
+      <DrawLine2 />
       {/* <UnrealBloom /> */}
       {/* <Bloom /> */}
       {/* <MapTest /> */}
