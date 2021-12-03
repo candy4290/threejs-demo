@@ -459,7 +459,7 @@ export default function MaterialCar() {
         requestAnimationFrame(render)
         matLine.resolution.set(window.innerWidth, window.innerHeight);
         const t = clock.getDelta();
-        const temp = t * (settings['车速(km/h)'] * 1000 / 3600) / 200;
+        const temp = t * (settings['车速(km/h)'] * 1000 / 3600) / curve.getLength();
         const time = - performance.now() / 1000;
 
         if (settings['轨迹动画']) {

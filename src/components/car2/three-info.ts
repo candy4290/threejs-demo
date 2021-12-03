@@ -16,3 +16,7 @@ export function drawLine() {
         );
     })
 }
+
+export function selfDrawLine(points: THREE.Vector3[]) {
+    return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0)
+}

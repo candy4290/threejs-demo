@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import {BrowserCheck} from '@kzlib/kcomponents';
 // import Car2 from './components/car2';
 // import DrawLine from './components/draw-line';
-import DrawLine2 from './components/draw-line';
+// import DrawLine2 from './components/draw-line';
 import Car2 from './components/car2';
 // import Sea from './components/sea';
 // import Light from './components/light';
