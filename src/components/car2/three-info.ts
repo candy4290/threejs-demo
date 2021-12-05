@@ -47,12 +47,11 @@ export function createDKC(scene: THREE.Scene) {
     })
 }
 
-export function createCarsBindTrace(scene: THREE.Scene, carList) {
-    const colors = ['blue', 'green', 'red', 'black', 'yellow', 'white']
+export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarModels: any[]) {
+    const colors = ['blue', 'green', 'red', 'black', 'yellow', 'white', 'pink']
     axios.get('/roads/routes.json', {}).then(rsp => {
-        console.log(rsp.data)
         const bodyMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xff0000, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
+            color: '#00CCFF', metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
         });
         const detailsMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff, metalness: 1.0, roughness: 0.5
@@ -96,7 +95,18 @@ export function createCarsBindTrace(scene: THREE.Scene, carList) {
             );
             mesh.rotation.x = - Math.PI / 2;
             mesh.renderOrder = 2;
-            // scene.add(carModel);
+            const testCarModel = carModel.clone();
+            testCarModel.progress = 0;
+            testCarModel.wheels = [];
+            testCarModel.wheels.push(
+                testCarModel.getObjectByName('wheel_fl'),
+                testCarModel.getObjectByName('wheel_fr'),
+                testCarModel.getObjectByName('wheel_rl'),
+                testCarModel.getObjectByName('wheel_rr')
+            );
+            testCarModel.position.set(null)
+            testCarModels.push(testCarModel)
+            scene.add(testCarModel);
             // light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
 
             rsp.data.routes.forEach((item, index) => {
