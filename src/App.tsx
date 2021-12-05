@@ -3,10 +3,10 @@ import './App.less';
 import { useRef } from 'react';
 import { useEffect } from 'react';
 
-// import Stats from 'stats.js';
+import Stats from 'stats.js';
 // import MapTest from './components/openlayer';
 // import UnrealBloom from './components/unreal-bloom';
-// import Car1 from './components/car1';
+import Car1 from './components/car1';
 // import Bloom from './components/bloom';
 import {BrowserCheck} from '@kzlib/kcomponents';
 // import Car2 from './components/car2';
@@ -21,17 +21,17 @@ function App() {
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // var stats = new Stats();
-    // stats.showPanel(0) ; // 0: fps, 1: ms, 2: mb, 3+: custom
-    // document.body.appendChild( stats.dom );
+    var stats = new Stats();
+    stats.showPanel(0) ; // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.body.appendChild( stats.dom );
     
-    // function animate() {
-    //   stats.begin();
-    //   // monitored code goes here
-    //   stats.end();
-    //   requestAnimationFrame( animate );
-    // }
-    // requestAnimationFrame( animate );
+    function animate() {
+      stats.begin();
+      // monitored code goes here
+      stats.end();
+      requestAnimationFrame( animate );
+    }
+    requestAnimationFrame( animate );
   }, []);
 
   return (

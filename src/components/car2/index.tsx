@@ -7,7 +7,7 @@ import { createComposerAndRenderPass, createFxaa } from "../../utils/threejs-uti
 import * as dat from 'dat.gui';
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
-import { drawLine, selfDrawLine } from "./three-info";
+import { createCarsBindTrace, createDKC, createLbjn, drawLine, selfDrawLine } from "./three-info";
 import './index.less';
 
 /**
@@ -23,7 +23,6 @@ let controls: MapControls;
 let composer: EffectComposer;
 let gui: dat.GUI;
 let effectFXAA: ShaderPass;
-let carModel: any;
 let wheels: any[] = [];
 let minx = 0;
 let miny = 0;
@@ -35,16 +34,17 @@ let raycaster: THREE.Raycaster;
 const mouse = new THREE.Vector2();
 let trace: THREE.Vector3[] = []; /* 轨迹点位 */
 let points: THREE.Vector3[] = []; /* 继续射线最新的10个点 */
-let catmullRomCurve3: THREE.CatmullRomCurve3;
-let catmullRomCurve3Length: number;
 let stopContinueControls: dat.GUIController[] = [];
+let settings: any = {};
 const clock = new THREE.Clock();
+const carList: any[] = [];
 export default function Car2() {
     useEffect(() => {
         init();
         return () => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('dblclick', dbClick);
+            window.removeEventListener('resize', onWindowResize);
             effectFXAA.clear = true;
             scene.traverse((child: any) => {
                 if (child.material) {
@@ -96,14 +96,16 @@ export default function Car2() {
         createPanel();
 
         loadRoad();
-        createCar();
 
         composer = createComposerAndRenderPass(renderer, scene, camera).composer;
         effectFXAA = createFxaa(composer).effectFXAA;
 
         raycaster = new THREE.Raycaster();
-        window.addEventListener( 'mousemove', onMouseMove, false );
-        window.addEventListener('dblclick', dbClick);
+        // window.addEventListener( 'mousemove', onMouseMove, false );
+        // window.addEventListener('dblclick', dbClick);
+        window.addEventListener('resize', onWindowResize);
+
+        createCarsBindTrace(scene, carList);
 
         render();
         
@@ -153,73 +155,6 @@ export default function Car2() {
         });
     }
 
-    function createCar() {
-        const bodyMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xff0000, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
-        });
-        const detailsMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff, metalness: 1.0, roughness: 0.5
-        });
-        const glassMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff, metalness: 0, roughness: 0.1, opacity: 0.8, transparent: true
-        });
-
-        // Car
-        const shadow = new THREE.TextureLoader().load('/glbs/ferrari_ao.png');
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath('/js/libs/draco/gltf/');
-
-        const loader = new GLTFLoader();
-        loader.setDRACOLoader(dracoLoader);
-        loader.load('/glbs/ferrari.glb', (gltf) => {
-            // console.log(gltf)
-            carModel = gltf.scene.children[0];
-            carModel.traverse((object: any) => {
-                if (object.isMesh) {
-                    object.userData = {
-                        'hasOutlinePass': true,
-                    }
-                    object.castShadow = true; /* 物体开启“引起阴影” */
-                    object.receiveShadow = true; /* 物体开启“接收阴影” */
-                };
-            });
-            carModel.getObjectByName('body').material = bodyMaterial;
-            carModel.getObjectByName('rim_fl').material = detailsMaterial;
-            carModel.getObjectByName('rim_fr').material = detailsMaterial;
-            carModel.getObjectByName('rim_rr').material = detailsMaterial;
-            carModel.getObjectByName('rim_rl').material = detailsMaterial;
-            carModel.getObjectByName('trim').material = detailsMaterial;
-            carModel.getObjectByName('glass').material = glassMaterial;
-            carModel.position.set(504,0.2,-14)
-            carModel.paused = true;
-            carModel.progress = 0;
-            wheels.push(
-                carModel.getObjectByName('wheel_fl'),
-                carModel.getObjectByName('wheel_fr'),
-                carModel.getObjectByName('wheel_rl'),
-                carModel.getObjectByName('wheel_rr')
-            );
-
-            // for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
-            //     if (i === 0 || i === 1) {
-            //         wheels[i].rotation.z = Math.PI / 8;
-            //     }
-            // }
-
-            // shadow
-            const mesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
-                new THREE.MeshBasicMaterial({
-                    map: shadow, blending: THREE.MultiplyBlending, toneMapped: false, transparent: true
-                })
-            );
-            mesh.rotation.x = - Math.PI / 2;
-            mesh.renderOrder = 2;
-            scene.add(carModel);
-            // light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
-        });
-    }
-
     function createPanel() {
         dat.GUI.TEXT_CLOSED = '关闭Controls';
         dat.GUI.TEXT_OPEN = '打开Controls';
@@ -230,28 +165,26 @@ export default function Car2() {
         const folder00 = gui.addFolder('车辆状态');
         const folder0 = gui.addFolder('辅助处理');
         const folder = gui.addFolder('后期处理');
-        const settings = {
-            '清空轨迹': () => {
-                trace = [];
-                carModel.paused = true;
-                carModel.position.set(504,0.2,-14)
-            },
+        const folder2 = gui.addFolder('视角');
+        settings = {
             '暂停': () => {
-                carModel.paused = true;
+                carList.forEach(item => {
+                    item.paused = true;
+                })
             },
+            '相机跟随': '不跟随',
             '继续': () => {
-                console.log(trace)
-                catmullRomCurve3 = selfDrawLine(trace);
-                catmullRomCurve3Length = catmullRomCurve3.getLength();
-                carModel.paused = false;
-                if (carModel.progress >= 1) {
-                    carModel.progress = 0;
-                }
+                carList.forEach(item => {
+                    item.paused = false;
+                    if (item.progress >= 1) {
+                        item.progress = 0;
+                    }
+                })
             },
             '坐标轴': false,
             '抗锯齿': false
         }
-        folder00.add(settings, '清空轨迹');
+        // folder00.add(settings, '清空轨迹');
         stopContinueControls.push(folder00.add(settings, '暂停'));
         stopContinueControls.push(folder00.add(settings, '继续'));
         folder0.add(settings, '坐标轴').onChange(e => {
@@ -267,6 +200,20 @@ export default function Car2() {
             } else {
                 composer.removePass(effectFXAA);
             }
+        });
+        folder2.add(settings, '相机跟随', ['不跟随', '红车', '黄车', '黑车', '白车', '绿车', '蓝车']).onChange(e => {
+            const temp = {
+                '不跟随': '',
+                '红车': 'red',
+                '黄车': 'yellow',
+                '黑车': 'black',
+                '白车': 'white',
+                '绿车': 'green',
+                '蓝车': 'blue',
+            };
+            carList.forEach(item => {
+                item.follow = temp[e] === item.color;
+            })
         })
         stopContinueControls.forEach((control: any) => {
             control.classList1 = control.domElement.parentElement.parentElement.classList;
@@ -284,13 +231,14 @@ export default function Car2() {
 
     /* 更新暂停、继续操作的可用性 */
     function updateCrossFadeControls() {
-        if (carModel.paused || carModel.progress >= 1) {
+       const flag = carList.filter(item => (item.paused || item.progress > 1)).length > 0;
+       if (flag) {
             (stopContinueControls[0] as any).setDisabled();
             (stopContinueControls[1] as any).setEnabled();
-        } else {
+       } else {
             (stopContinueControls[0] as any).setEnabled();
             (stopContinueControls[1] as any).setDisabled();
-        }
+       }
     }
     /* 
     射线一直存在
@@ -319,41 +267,53 @@ export default function Car2() {
             trace.push(points[points.length - 1])
         }
     }
+
+    function onWindowResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(width, height);
+        composer?.setSize(width, height);
+    }
+
     
     function render() {
         requestAnimationFrame(render)
-        if (carModel && stopContinueControls.length > 0) {
+        if (stopContinueControls.length > 0) {
             updateCrossFadeControls();
         }
         const t = clock.getDelta();
-        if (catmullRomCurve3 && carModel && carModel.progress < 1 && !carModel.paused) {
-            const temp = t * (40 * 1000 / 3600) / catmullRomCurve3Length;
-
-            const time = -performance.now() / 1000;
-            for (let i = 0; i < wheels.length; i++) { /* 转动车轮 */
-                wheels[i].rotation.x = time * Math.PI;
-            }
-            carModel.progress += temp;
-            // console.log(carModel.progress)
-            const point = catmullRomCurve3.getPoint(carModel.progress); /* 也是向量切线的终点坐标 */
-            // const tangent = catmullRomCurve3.getTangent(carModel.progress - Math.floor(carModel.progress)).multiplyScalar(10); /* 单位向量切线 */
-            // const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
-
-            const point1 = catmullRomCurve3.getPoint(carModel.progress - 0.0001);
-            console.log(carModel.progress)
-            if (point && point.x) {
-                carModel.position.copy(point);
-                if (carModel.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
-                    carModel.lookAt(point1); /* 转弯、掉头动作 */
+        carList.forEach(item => {
+            if (item.progress < 1 && !item.paused) {
+                const temp = t * (80 * 1000 / 3600) / item.catmullRomCurve3Length;
+                const time = -performance.now() / 1000;
+                for (let i = 0; i < item.wheels.length; i++) { /* 转动车轮 */
+                    item.wheels[i].rotation.x = time * Math.PI;
                 }
-
-                // if (settings['相机跟随']) {
-                //     camera.position.copy(startPoint).setY(20);
-                //     controls.target.copy(point);
-                // }
+                item.progress += temp;
+                const point = item.catmullRomCurve3.getPoint(item.progress); /* 也是向量切线的终点坐标 */
+                const tangent = item.catmullRomCurve3.getTangent(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
+                const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
+    
+                const point1 = item.catmullRomCurve3.getPoint(item.progress - 0.0001);
+                if (point && point.x) {
+                    item.position.copy(point);
+                    if (item.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
+                        item.lookAt(point1); /* 转弯、掉头动作 */
+                        if (item.follow) {
+                            camera.position.copy(startPoint).setY(startPoint.y + 2);
+                            controls.target.copy(point);
+                        }
+                    }
+                }
+            } else if (item.progress >= 1 && !item.paused) {
+                item.progress = 0;
             }
-        }
-        
+
+        })
         controls.update();
         if (composer && composer.passes.length > 1) {
             composer.readBuffer.texture.encoding = renderer.outputEncoding;

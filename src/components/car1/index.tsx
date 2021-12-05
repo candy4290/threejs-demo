@@ -140,7 +140,7 @@ export default function MaterialCar() {
         scene.add(light);
 
         const axesHelper = new THREE.AxesHelper(50); /* 辅助坐标轴，z-蓝色 x-红色 y-绿色 */
-        // scene.add(axesHelper);
+        scene.add(axesHelper);
 
         drawLine(); /* 轨迹曲线 */
 
@@ -149,13 +149,14 @@ export default function MaterialCar() {
 
         createPanel(); /* gui面板 */
 
-        render();
+        // render();
+        renderer.render(scene, camera)
     }
 
     /* 加载车的模型 */
     function createCar() {
         const bodyMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0xff0000, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
+            color: 'blue', metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
         });
         const detailsMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff, metalness: 1.0, roughness: 0.5
@@ -495,7 +496,7 @@ export default function MaterialCar() {
                 carModel.lookAt(point1); /* 转弯、掉头动作 */
 
                 if (settings['相机跟随']) {
-                    camera.position.copy(startPoint).setY(20);
+                    camera.position.copy(startPoint).setY(2);
                     controls.target.copy(point);
                 }
             }
