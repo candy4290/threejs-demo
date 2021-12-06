@@ -58,7 +58,8 @@
     "build:prod": "dotenv -e .env.production craco build",
     "test": "craco test",
     "eject": "craco eject",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "serve": "serve -s build"
   },
   "eslintConfig": {
     "extends": [

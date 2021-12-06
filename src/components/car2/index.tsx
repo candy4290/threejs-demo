@@ -6,8 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { createComposerAndRenderPass, createFxaa } from "../../utils/threejs-util";
 import * as dat from 'dat.gui';
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
-import { createCarsBindTrace, createDKC, createLbjn, drawLine, selfDrawLine } from "./three-info";
+import { createCarsBindTrace, selfDrawLine } from "./three-info";
 import './index.less';
 
 /**
