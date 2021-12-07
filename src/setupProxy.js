@@ -1,12 +1,12 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 module.exports = function(app) {
     app.use(
-        createProxyMiddleware("/jiadingqinwu-api", {
-            target: "http://172.20.62.117:47070",
+        createProxyMiddleware("/cxx", {
+            target: "http://172.20.62.119:30555",
             changeOrigin: true,
             logLevel: 'debug',
             pathRewrite: {
-                "^/jiadingqinwu-api": ""
+                "^/cxx": ""
             }
         }),
     );

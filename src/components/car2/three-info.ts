@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as THREE from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import NProgress from 'nprogress';
 
 /**
  * 绘制路径
@@ -111,6 +112,9 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
 
             rsp.data.routes.forEach((item, index) => {
                 const temp = carModel.clone();
+                if (index === 0) {
+                    temp.add()
+                }
                 temp.getObjectByName('body').material = new THREE.MeshPhysicalMaterial({
                     color: colors[index] || Math.random()*0xffffff, metalness: 0.6, roughness: 0.4, clearcoat: 0.05, clearcoatRoughness: 0.05
                 });
@@ -124,6 +128,7 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
                     temp.getObjectByName('wheel_rl'),
                     temp.getObjectByName('wheel_rr')
                 );
+                temp.speed = (Math.floor(Math.random() * 60) + 60);
                 temp.catmullRomCurve3 = selfDrawLine(item.points.map(i => new THREE.Vector3(i.x, i.y, i.z)));
                 temp.catmullRomCurve3Length = temp.catmullRomCurve3.getLength();
                 carList.push(temp)
@@ -131,4 +136,55 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
             });
         });
     })    
+}
+
+export function loadRoad(scene: THREE.Scene) {
+    const loader = new GLTFLoader();
+    let minx = 0;
+    let miny = 0;
+    let minz = 0;
+    let maxx = 0;
+    let maxy = 0;
+    let maxz = 0;
+    loader.load('/cxx/glbs/与道路接轨的桥/scene.gltf', (gltf) => {
+        // const temp = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[4];
+        const temp = gltf.scene.children[0];
+        // 4-黄线 5-桥 6-平地路网
+        temp.traverse((object: any) => {
+            if (object.isMesh) {
+                object.geometry.computeBoundingBox();
+                const t = object.geometry.boundingBox;
+                if (t.min.x < minx) {
+                    minx = t.min.x
+                }
+                if (t.min.y < miny) {
+                    miny = t.min.y
+                }
+                if (t.min.z < minz) {
+                    minz = t.min.z
+                }
+                if (t.max.x > maxx) {
+                    maxx = t.max.x
+                }
+                if (t.max.y > maxy) {
+                    maxy = t.max.y
+                }
+                if (t.max.z > maxz) {
+                    maxz = t.max.z
+                }
+                object.castShadow = true; /* 物体开启“引起阴影” */
+                object.receiveShadow = true; /* 物体开启“接收阴影” */
+            };
+        });
+        temp.position.y = -5.6;
+        console.log({minx, miny, minz}, {maxx, maxy, maxz}, {x: maxx-minx, y: maxy-miny, z: maxz - minz})
+        scene.add(temp);
+
+        // drawLine().then(rsp => {catmullRomCurve3 = rsp;catmullRomCurve3Length = catmullRomCurve3.getLength()});
+    }, e=> {
+        if (e.lengthComputable) {
+            const percent = e.loaded/e.total;
+            NProgress.set(percent);
+        }
+    });
 }

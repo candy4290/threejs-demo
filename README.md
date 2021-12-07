@@ -71,6 +71,8 @@ fxaa效果一般、开销很小，无法解决线的锯齿问题，带来模糊
 SSAA：效果最好，开销太大
 taa: 有动画时失效
 
+getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-between-getpoint-and-getpointat-methods/6637/2
+
 
 ### jsx标签注释
  {

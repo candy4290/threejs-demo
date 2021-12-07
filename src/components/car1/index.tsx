@@ -23,7 +23,6 @@ const anmations: {
     mesh: Line2;
     linePointsV3: THREE.Vector3[];
 }[] = [];
-
 export default function MaterialCar() {
     const modalRef = useRef<{
         matLine: LineMaterial,
@@ -149,8 +148,7 @@ export default function MaterialCar() {
 
         createPanel(); /* gui面板 */
 
-        // render();
-        renderer.render(scene, camera)
+        render();
     }
 
     /* 加载车的模型 */
@@ -228,6 +226,11 @@ export default function MaterialCar() {
         ], false/*是否闭合*/,
             'catmullrom', 0
         );
+
+        const tubeGeometry = new THREE.TubeGeometry(curve, 200, 0.2, 20, false);
+        const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+        const mesh = new THREE.Mesh( tubeGeometry, material );
+        scene.add( mesh );
 
         /* 画出过原来路径的几个点的直线 */
         const points = lines[index].map(item => new THREE.Vector3(item[0], 0, item[1]));
@@ -486,11 +489,13 @@ export default function MaterialCar() {
                 wheels[i].rotation.x = time * Math.PI;
             }
             carModel.progress += temp;
-            const point = curve.getPoint(carModel.progress); /* 也是向量切线的终点坐标 */
-            const tangent = curve.getTangent(carModel.progress - Math.floor(carModel.progress)).multiplyScalar(10); /* 单位向量切线 */
+            if (carModel.progress > 1) {
+                carModel.progress = 1;
+            }
+            const point = curve.getPointAt(carModel.progress); /* 也是向量切线的终点坐标 */
+            const tangent = curve.getTangentAt(carModel.progress - Math.floor(carModel.progress)).multiplyScalar(10); /* 单位向量切线 */
             const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
-
-            const point1 = curve.getPoint(carModel.progress - 0.0001);
+            const point1 = curve.getPointAt(carModel.progress - 0.0001);
             if (point && point.x) {
                 carModel.position.copy(point);
                 carModel.lookAt(point1); /* 转弯、掉头动作 */

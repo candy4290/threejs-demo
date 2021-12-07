@@ -1,12 +1,13 @@
 import { useEffect } from "react"
 import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { createComposerAndRenderPass, createFxaa } from "../../utils/threejs-util";
 import * as dat from 'dat.gui';
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
-import { createCarsBindTrace, selfDrawLine } from "./three-info";
+import { createCarsBindTrace, loadRoad, selfDrawLine } from "./three-info";
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
+import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer';
 import './index.less';
 
 /**
@@ -19,16 +20,23 @@ let testCarModels: any[] = [];
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
+let labelRenderer: CSS2DRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0px';
+document.body.appendChild(labelRenderer.domElement);
+
 let controls: MapControls;
 let composer: EffectComposer;
+let scene2: THREE.Scene = new THREE.Scene();
+let renderer2: CSS3DRenderer = new CSS3DRenderer();
+renderer2.setSize( window.innerWidth, window.innerHeight );
+renderer2.domElement.style.position = 'absolute';
+renderer2.domElement.style.top = '0px';
+document.body.appendChild( renderer2.domElement );
+
 let gui: dat.GUI;
 let effectFXAA: ShaderPass;
-let minx = 0;
-let miny = 0;
-let minz = 0;
-let maxx = 0;
-let maxy = 0;
-let maxz = 0;
 let raycaster: THREE.Raycaster;
 const mouse = new THREE.Vector2();
 let trace: THREE.Vector3[] = []; /* 轨迹点位 */
@@ -37,6 +45,7 @@ let stopContinueControls: dat.GUIController[] = [];
 let settings: any = {};
 const clock = new THREE.Clock();
 const carList: any[] = [];
+let dingPaiLable: CSS2DObject;
 export default function Car2() {
     useEffect(() => {
         init();
@@ -55,7 +64,6 @@ export default function Car2() {
                 child = null;
             });
             renderer.forceContextLoss();
-            renderer.context = null as any;
             renderer.dispose();
             controls.dispose();
             gui.destroy();
@@ -77,13 +85,6 @@ export default function Car2() {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 0.85; /* 色调映射的曝光级别 */
 
-        controls = new MapControls(camera, renderer.domElement);
-        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2.01;
-        controls.screenSpacePanning = false;
-        controls.target.set(2, 0, 0);
-
         const light = new THREE.DirectionalLight(0xffffff);
         light.position.set(200, 200, 200);
         light.castShadow = true; /* 灯光开启“引起阴影” */
@@ -94,7 +95,7 @@ export default function Car2() {
 
         createPanel();
 
-        loadRoad();
+        loadRoad(scene);
 
         composer = createComposerAndRenderPass(renderer, scene, camera).composer;
         effectFXAA = createFxaa(composer).effectFXAA;
@@ -104,52 +105,55 @@ export default function Car2() {
 
         createCarsBindTrace(scene, carList, testCarModels);
 
+        createControls();
+
         render();
         
     }
 
-    function loadRoad() {
-        const loader = new GLTFLoader();
-        loader.load('/glbs/与道路接轨的桥/scene.gltf', (gltf) => {
-            // const temp = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[4];
-            const temp = gltf.scene.children[0];
-            // 4-黄线 5-桥 6-平地路网
-            temp.traverse((object: any) => {
-                if (object.isMesh) {
-                    object.geometry.computeBoundingBox();
-                    const t = object.geometry.boundingBox;
-                    if (t.min.x < minx) {
-                        minx = t.min.x
-                    }
-                    if (t.min.y < miny) {
-                        miny = t.min.y
-                    }
-                    if (t.min.z < minz) {
-                        minz = t.min.z
-                    }
-                    if (t.max.x > maxx) {
-                        maxx = t.max.x
-                    }
-                    if (t.max.y > maxy) {
-                        maxy = t.max.y
-                    }
-                    if (t.max.z > maxz) {
-                        maxz = t.max.z
-                    }
-                    object.castShadow = true; /* 物体开启“引起阴影” */
-                    object.receiveShadow = true; /* 物体开启“接收阴影” */
-                };
-            });
-            temp.position.y = -5.6;
-            console.log({minx, miny, minz}, {maxx, maxy, maxz}, {x: maxx-minx, y: maxy-miny, z: maxz - minz})
-            scene.add(temp);
+    function createControls() {
+        controls = new MapControls(camera, renderer2?.domElement);
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.01;
+        controls.screenSpacePanning = false;
+        controls.target.set(2, 0, 0);
+    }
 
-            // drawLine().then(rsp => {catmullRomCurve3 = rsp;catmullRomCurve3Length = catmullRomCurve3.getLength()});
-        }, e=> {
-            if (e.lengthComputable) {
-                console.log(e.loaded, e.total)
-            }
-        });
+    /* 创建2d展示 */
+    function create2ds() {
+        const dingPaiDiv = document.createElement('div');
+        dingPaiDiv.className = 'box2';
+        dingPaiDiv.innerHTML = `
+            <div class="ys-block">
+                <div class="ys-con">
+                    西部世界
+                </div>
+            </div>
+        `
+
+        dingPaiLable = new CSS2DObject(dingPaiDiv);
+
+
+        dingPaiLable.position.set(100,50,100);
+        scene.add(dingPaiLable);
+    }
+
+    /* 创建3d顶牌 */
+    function create3ds() {
+        const dingPaiDiv3 = document.createElement('div');
+        dingPaiDiv3.className = 'box2';
+        dingPaiDiv3.innerHTML = `
+            <div class="ys-block">
+                <div class="ys-con">
+                    西部世界
+                </div>
+            </div>
+        `
+        const dingPaiLable3 = new CSS3DObject(dingPaiDiv3);
+        dingPaiLable3.position.set(-50,50,-214);
+        dingPaiLable3.scale.set(0.5,0.5,0.5)
+        scene2.add(dingPaiLable3);
     }
 
     function createPanel() {
@@ -164,6 +168,7 @@ export default function Car2() {
         const folder = gui.addFolder('后期处理');
         const folder2 = gui.addFolder('视角');
         const folder3 = gui.addFolder('个人调试');
+        const folder4 = gui.addFolder('顶牌展示');
         settings = {
             '暂停': () => {
                 carList.forEach(item => {
@@ -200,8 +205,24 @@ export default function Car2() {
                 testCarModels[0].position.set(null);
                 points = [];
                 trace = [];
-            }
+            },
+            '2d顶牌': false,
+            '3d顶牌': false,
         }
+        folder4.add(settings, '2d顶牌').onChange(e => {
+            if (e) {
+                create2ds();
+            } else {
+                scene.remove(dingPaiLable);
+            }
+        })
+        folder4.add(settings, '3d顶牌').onChange(e => {
+            if (e) {
+                create3ds();
+            } else {
+                scene2.clear()
+            }
+        })
         // folder00.add(settings, '清空轨迹');
         folder3.add(settings, '开启射线').onChange(e => {
             if (e) {
@@ -311,6 +332,8 @@ export default function Car2() {
         camera.updateProjectionMatrix();
 
         renderer.setSize(width, height);
+        // labelRenderer && labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        // renderer2 && renderer2.setSize(window.innerWidth, window.innerHeight);
         composer?.setSize(width, height);
     }
 
@@ -323,17 +346,21 @@ export default function Car2() {
         const t = clock.getDelta();
         carList.forEach(item => {
             if (item.progress < 1 && !item.paused) {
-                const temp = t * (80 * 1000 / 3600) / item.catmullRomCurve3Length;
+                const temp = t * (item.speed * 1000 / 3600) / item.catmullRomCurve3Length;
                 const time = -performance.now() / 1000;
                 for (let i = 0; i < item.wheels.length; i++) { /* 转动车轮 */
                     item.wheels[i].rotation.x = time * Math.PI;
                 }
                 item.progress += temp;
-                const point = item.catmullRomCurve3.getPoint(item.progress); /* 也是向量切线的终点坐标 */
-                const tangent = item.catmullRomCurve3.getTangent(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
+                if (item.progress >= 1) {
+                    item.progress = 1;
+                    item.speed = (Math.floor(Math.random() * 60) + 60);
+                }
+                const point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
+                const tangent = item.catmullRomCurve3.getTangentAt(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
                 const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
     
-                const point1 = item.catmullRomCurve3.getPoint(item.progress - 0.0001);
+                const point1 = item.catmullRomCurve3.getPointAt(item.progress - 0.0001);
                 if (point && point.x) {
                     item.position.copy(point);
                     if (item.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
@@ -356,11 +383,11 @@ export default function Car2() {
                 testCarModels[0].wheels[i].rotation.x = time * Math.PI;
             }
             testCarModels[0].progress += temp;
-            const point = testCarModels[0].catmullRomCurve3.getPoint(testCarModels[0].progress); /* 也是向量切线的终点坐标 */
-            const tangent = testCarModels[0].catmullRomCurve3.getTangent(testCarModels[0].progress - Math.floor(testCarModels[0].progress)).multiplyScalar(10); /* 单位向量切线 */
+            const point = testCarModels[0].catmullRomCurve3.getPointAt(testCarModels[0].progress); /* 也是向量切线的终点坐标 */
+            const tangent = testCarModels[0].catmullRomCurve3.getTangentAt(testCarModels[0].progress - Math.floor(testCarModels[0].progress)).multiplyScalar(10); /* 单位向量切线 */
             const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
 
-            const point1 = testCarModels[0].catmullRomCurve3.getPoint(testCarModels[0].progress - 0.0001);
+            const point1 = testCarModels[0].catmullRomCurve3.getPointAt(testCarModels[0].progress - 0.0001);
             if (point && point.x) {
                 testCarModels[0].position.copy(point);
                 if (testCarModels[0].progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
@@ -381,8 +408,12 @@ export default function Car2() {
         } else {
             renderer.render(scene, camera)
         }
+        labelRenderer && labelRenderer.render(scene, camera);
+        renderer2 && renderer2.render( scene2, camera );
     }
     return (
-        <canvas id="three"></canvas>
+        <>
+           <canvas id="three"></canvas>
+        </>
     )
 }

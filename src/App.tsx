@@ -13,6 +13,7 @@ import {BrowserCheck} from '@kzlib/kcomponents';
 // import DrawLine from './components/draw-line';
 // import DrawLine2 from './components/draw-line';
 import Car2 from './components/car2';
+import DingPai from './components/dingpai';
 // import Sea from './components/sea';
 // import Light from './components/light';
 // import LightLine from './components/light-line';
@@ -41,6 +42,7 @@ function App() {
       {/* <Sea /> */}
       {/* <Car1 /> */}
       <Car2 />
+      {/* <DingPai /> */}
       {/* <DrawLine /> */}
       {/* <DrawLine2 /> */}
       {/* <UnrealBloom /> */}
