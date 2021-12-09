@@ -19,6 +19,8 @@
     "ahooks": "^2.10.12",
     "antd": "^4.16.5",
     "axios": "^0.21.1",
+    "cannon": "github:schteppe/cannon.js",
+    "cannon-es": "^0.18.0",
     "core-js": "^3.19.1",
     "craco-less": "^1.17.1",
     "cz-conventional-changelog": "^3.3.0",

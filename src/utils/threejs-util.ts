@@ -239,3 +239,18 @@ function gradientColors(start: any, end: any, steps: number, gamma?: any) {
   }
   return output;
 }
+
+
+/**
+ * 获取三维空间中鼠标位置
+ *
+ * @export
+ * @param {*} event
+ * @param {THREE.PerspectiveCamera} camera
+ * @return {*} 
+ */
+export function getMousePosition(event: any, camera: THREE.PerspectiveCamera) {
+  let x = (event.clientX / window.innerWidth) * 2 - 1;//将鼠标点击的x值转换成[-1, 1]
+  let y = - (event.clientY / window.innerHeight) * 2 + 1;//将鼠标点击的y值转换成[-1, 1]
+  return new THREE.Vector3(x, y, -1).unproject(camera); /* 通过unproject方法，使用所传入的摄像机来反投影（projects）该向量，得到鼠标对应三维空间点 */
+}

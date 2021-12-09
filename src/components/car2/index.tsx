@@ -80,7 +80,7 @@ export default function Car2() {
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
         camera.position.set(200, 200, 200);
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true; /* 渲染器开启阴影渲染 */
@@ -109,6 +109,11 @@ export default function Car2() {
         createCarsBindTrace(scene, carList, testCarModels);
 
         createControls();
+
+        /* 获取射线到平面的距离 */
+        // const t = new THREE.Ray(new THREE.Vector3(0,100,0), new THREE.Vector3(0,-1,0))
+        // const tt = t.distanceToPlane(new THREE.Plane(new THREE.Vector3(0,1,0), 0));
+        // console.log(tt);
 
         render();
 
@@ -413,9 +418,19 @@ export default function Car2() {
                     item.progress = 1;
                     item.speed = (Math.floor(Math.random() * 60) + 60);
                 }
-                const point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
+                let point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
+                
                 const tangent = item.catmullRomCurve3.getTangentAt(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
                 const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
+
+                // if (item.color === 'red') {
+                //     const ray = new THREE.Raycaster(new THREE.Vector3(point.x, point.y + 2, point.z), new THREE.Vector3(0,-1,0)); 
+                //     const tt = ray.intersectObjects(scene.children);
+                //     if (tt.length > 0) {
+                //         // console.log(point, tt[0].point)
+                //         point = tt[0].point;
+                //     }
+                // }
 
                 const point1 = item.catmullRomCurve3.getPointAt(item.progress - 0.0001);
                 if (point && point.x) {

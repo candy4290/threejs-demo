@@ -111,7 +111,11 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
             testCarModels.push(testCarModel)
             scene.add(testCarModel);
             // light.target = carModel; /* 平行光现在就可以追踪到目标对像了 */
+            const t = {
+                routes: [
 
+                ]
+            }
             rsp.data.routes.forEach((item, index) => {
                 const temp = carModel.clone();
                 if (index === 0) {
@@ -133,11 +137,34 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
                 temp.speed = (Math.floor(Math.random() * 60) + 60);
                 temp.catmullRomCurve3 = selfDrawLine(item.points.map(i => new THREE.Vector3(i.x, i.y, i.z)));
                 temp.catmullRomCurve3Length = temp.catmullRomCurve3.getLength();
+                // const tt = getTotalRoutes(temp.catmullRomCurve3, scene);
+                // (t.routes as any).push({
+                //     name: 'xxx',
+                //     points: tt
+                // })
                 carList.push(temp)
                 scene.add(temp);
             });
+            console.log(t);
         });
     })
+}
+
+function getTotalRoutes(catmullRomCurve3: THREE.CatmullRomCurve3, scene: THREE.Scene) {
+    let progress = 0.001;
+    const result: any = [];
+    while (progress <= 1) {
+        const point = catmullRomCurve3.getPointAt(progress)
+        progress+=0.001;
+        const ray = new THREE.Raycaster(new THREE.Vector3(point.x, point.y + 2, point.z), new THREE.Vector3(0,-1,0)); 
+        const tt = ray.intersectObjects(scene.children);
+        if (tt.length > 0) {
+            const a = tt[0].point;
+            result.push({x: a.x, y: a.y, z: a.z});
+        }
+    }
+    return result;
+    // console.log(result);
 }
 
 export function loadRoad(scene: THREE.Scene) {
@@ -151,7 +178,10 @@ export function loadRoad(scene: THREE.Scene) {
     loader.load('/cxx/glbs/与道路接轨的桥/scene.gltf', (gltf) => {
         // const temp = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[4];
         const temp = gltf.scene.children[0];
+        console.log(temp);
         // 4-黄线 5-桥 6-平地路网
+        const t = temp.getObjectByName('B_Col_DYel') as THREE.Mesh;
+        console.log(t.geometry.attributes.position.array)
         temp.traverse((object: any) => {
             if (object.isMesh) {
                 object.geometry.computeBoundingBox();
