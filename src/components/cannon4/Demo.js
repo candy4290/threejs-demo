@@ -1,8 +1,6 @@
-import * as CANNON from '../../dist/cannon-es.js'
-import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
-import Stats from 'https://unpkg.com/three@0.122.0/examples/jsm/libs/stats.module.js'
-import * as dat from 'https://unpkg.com/dat.gui@0.7.7/build/dat.gui.module.js'
-import { OrbitControls } from 'https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js'
+import * as CANNON from 'cannon-es'
+import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { SmoothieChart, TimeSeries } from './smoothie.js'
 import { addTitle, addSourceButton } from './dom-utils.js'
 import { bodyToMesh } from './three-conversion-utils.js'
@@ -94,117 +92,6 @@ class Demo extends CANNON.EventTarget {
     document.addEventListener('keypress', this.onKeyPress)
   }
 
-  initGui = () => {
-    // DAT GUI
-    this.gui = new dat.GUI()
-    this.gui.domElement.parentNode.style.zIndex = 3
-
-    // Render mode
-    const renderFolder = this.gui.addFolder('Rendering')
-    renderFolder.add(this.settings, 'rendermode', { Solid: 'solid', Wireframe: 'wireframe' }).onChange((mode) => {
-      this.setRenderMode(mode)
-    })
-    renderFolder.add(this.settings, 'contacts')
-    renderFolder.add(this.settings, 'cm2contact')
-    renderFolder.add(this.settings, 'normals')
-    renderFolder.add(this.settings, 'constraints')
-    renderFolder.add(this.settings, 'axes')
-    renderFolder
-      .add(this.settings, 'shadows')
-      .onChange((shadows) => {
-        if (shadows) {
-          this.spotLight.castShadow = true
-          this.renderer.shadowMap.autoUpdate = true
-        } else {
-          this.spotLight.castShadow = false
-          this.renderer.shadowMap.autoUpdate = false
-        }
-      })
-      .setValue(true)
-    renderFolder.add(this.settings, 'aabbs')
-    renderFolder.add(this.settings, 'profiling').onChange((profiling) => {
-      if (profiling) {
-        this.world.doProfiling = true
-        this.smoothie.start()
-        this.smoothieCanvas.style.display = 'block'
-      } else {
-        this.world.doProfiling = false
-        this.smoothie.stop()
-        this.smoothieCanvas.style.display = 'none'
-      }
-    })
-
-    // World folder
-    const worldFolder = this.gui.addFolder('World')
-    // Pause
-    worldFolder.add(this.settings, 'paused').onChange((paused) => {
-      if (paused) {
-        this.smoothie.stop()
-      } else {
-        this.smoothie.start()
-      }
-      this.resetCallTime = true
-    })
-    worldFolder.add(this.settings, 'stepFrequency', 10, 60 * 10, 10)
-    worldFolder.add(this.settings, 'maxSubSteps', 1, 50, 1)
-    const maxg = 100
-    worldFolder.add(this.settings, 'gx', -maxg, maxg).onChange((gx) => {
-      if (isNaN(gx)) {
-        return
-      }
-
-      this.world.gravity.set(gx, this.settings.gy, this.settings.gz)
-    })
-    worldFolder.add(this.settings, 'gy', -maxg, maxg).onChange((gy) => {
-      if (isNaN(gy)) {
-        return
-      }
-
-      this.world.gravity.set(this.settings.gx, gy, this.settings.gz)
-    })
-    worldFolder.add(this.settings, 'gz', -maxg, maxg).onChange((gz) => {
-      if (isNaN(gz)) {
-        return
-      }
-
-      this.world.gravity.set(this.settings.gx, this.settings.gy, gz)
-    })
-    worldFolder.add(this.settings, 'quatNormalizeSkip', 0, 50, 1).onChange((skip) => {
-      if (isNaN(skip)) {
-        return
-      }
-
-      this.world.quatNormalizeSkip = skip
-    })
-    worldFolder.add(this.settings, 'quatNormalizeFast').onChange((fast) => {
-      this.world.quatNormalizeFast = !!fast
-    })
-
-    // Solver folder
-    const solverFolder = this.gui.addFolder('Solver')
-    solverFolder
-      .add(this.settings, 'iterations', 1, 50, 1)
-
-      .onChange((it) => {
-        this.world.solver.iterations = it
-      })
-    solverFolder.add(this.settings, 'k', 10, 10000000).onChange((k) => {
-      this.setGlobalSpookParams(this.settings.k, this.settings.d, 1 / this.settings.stepFrequency)
-    })
-    solverFolder.add(this.settings, 'd', 0, 20, 0.1).onChange((d) => {
-      this.setGlobalSpookParams(this.settings.k, this.settings.d, 1 / this.settings.stepFrequency)
-    })
-    solverFolder
-      .add(this.settings, 'tolerance', 0.0, 10.0, 0.01)
-
-      .onChange((t) => {
-        this.world.solver.tolerance = t
-      })
-
-    // Scene picker folder
-    this.sceneFolder = this.gui.addFolder('Scenes')
-    this.sceneFolder.open()
-  }
 
   updateGui = () => {
     // First level
@@ -225,6 +112,7 @@ class Demo extends CANNON.EventTarget {
       throw new Error(`Render mode ${mode} not found!`)
     }
 
+    // eslint-disable-next-line default-case
     switch (mode) {
       case 'solid':
         this.currentMaterial = this.solidMaterial
@@ -251,11 +139,6 @@ class Demo extends CANNON.EventTarget {
     })
 
     this.settings.rendermode = mode
-  }
-
-  initStats = () => {
-    this.stats = new Stats()
-    document.body.appendChild(this.stats.domElement)
   }
 
   /**
@@ -671,6 +554,7 @@ class Demo extends CANNON.EventTarget {
   }
 
   onKeyPress = (event) => {
+    // eslint-disable-next-line default-case
     switch (event.code) {
       case 'Space': // Space - restart
         this.restartCurrentScene()
@@ -679,10 +563,8 @@ class Demo extends CANNON.EventTarget {
       case 'KeyH': // h - toggle widgets
         if (this.stats.domElement.style.display == 'none') {
           this.stats.domElement.style.display = 'block'
-          info.style.display = 'block'
         } else {
           this.stats.domElement.style.display = 'none'
-          info.style.display = 'none'
         }
         break
 

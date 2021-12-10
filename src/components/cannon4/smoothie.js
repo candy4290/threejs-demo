@@ -338,6 +338,7 @@ SmoothieChart.prototype.render = function (canvas, time) {
         }
       }
 
+      // eslint-disable-next-line no-unused-expressions
       ;(lastX = x), (lastY = y)
     }
     if (dataSet.length > 0 && seriesOptions.fillStyle) {

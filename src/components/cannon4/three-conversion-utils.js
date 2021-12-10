@@ -1,7 +1,7 @@
-import * as CANNON from '../../dist/cannon-es.js'
-import * as THREE from 'https://unpkg.com/three@0.122.0/build/three.module.js'
-import { ConvexGeometry } from 'https://unpkg.com/three@0.122.0/examples/jsm/geometries/ConvexGeometry.js'
-import { SimplifyModifier } from 'https://unpkg.com/three@0.122.0/examples/jsm/modifiers/SimplifyModifier.js'
+import * as CANNON from 'cannon-es'
+import * as THREE from 'three'
+import { ConvexGeometry } from 'three/jsm/geometries/ConvexGeometry.js'
+import { SimplifyModifier } from 'three/examples/jsm/modifiers/SimplifyModifier.js'
 
 /**
  * Converts a cannon.js shape to a three.js geometry

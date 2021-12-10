@@ -122,7 +122,7 @@ export default function Cannon3() {
 
         const radius = 1.3
         const sphereShape = new CANNON.Sphere(radius)
-        sphereBody = new CANNON.Body({ mass: 5, material: physicsMaterial })
+        sphereBody = new CANNON.Body({ mass: 5, material: physicsMaterial }) /* /使用球形刚体作为相机载体，让相机拥有质量属性 */
         sphereBody.addShape(sphereShape)
         sphereBody.position.set(nx * sx * 0.5, ny * sy + radius * 2, nz * sz * 0.5)
         sphereBody.linearDamping = 0.9

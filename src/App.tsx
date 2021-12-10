@@ -12,12 +12,13 @@ import {BrowserCheck} from '@kzlib/kcomponents';
 // import Car2 from './components/car2';
 // import DrawLine from './components/draw-line';
 // import DrawLine2 from './components/draw-line';
-import Car2 from './components/car2';
+// import Car2 from './components/car2';
 import DingPai from './components/dingpai';
 import FpsGame from './components/fps_games';
 import Cannon from './components/cannon';
 import Cannon2 from './components/cannon2';
 import Cannon3 from './components/cannon3';
+import Cannon4 from './components/cannon4';
 // import Sea from './components/sea';
 // import Light from './components/light';
 // import LightLine from './components/light-line';
@@ -48,7 +49,8 @@ function App() {
       {/* <Car2 /> */}
       {/* <Cannon /> */}
       {/* <Cannon2 /> */}
-      <Cannon3 />
+      {/* <Cannon3 /> */}
+      <Cannon4 />
       {/* <DingPai /> */}
       {/* <DrawLine /> */}
       {/* <DrawLine2 /> */}
