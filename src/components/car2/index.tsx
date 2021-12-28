@@ -49,6 +49,8 @@ const clock = new THREE.Clock();
 const carList: any[] = [];
 let dingPaiLable: CSS2DObject;
 let flyIndex = 0;
+
+const wireframeMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, wireframe: true });
 export default function Car2() {
     useEffect(() => {
         init();
