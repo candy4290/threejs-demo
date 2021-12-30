@@ -29,6 +29,7 @@ void main() {
 `;
 
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default function (option = {}) {
     const {
         radius,
@@ -69,3 +70,23 @@ export default function (option = {}) {
     mesh.renderOrder = renderOrder || 1;
     return mesh;
 }
+
+/* 示例代码 */
+// const wallData = [{
+//     position: {
+//         x: -150,
+//         y: 15,
+//         z: 100
+//     },
+//     speed: 0.5,
+//     color: '#efad35',
+//     opacity: 0.6,
+//     radius: 420,
+//     height: 120,
+//     renderOrder: 5
+// }]
+// wallData.forEach((data) => {
+//     const mesh = Wall(data);
+//     mesh.material.uniforms.time = time;
+//     scene.add(mesh);
+// });

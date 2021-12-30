@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+// eslint-disable-next-line import/no-anonymous-default-export
 export default function (option) {
     const {
         source,
@@ -116,3 +117,43 @@ export default function (option) {
     
     return point;
 }
+/* 示例代码 */
+// const flyData = [{
+//     source: {
+//         x: -150,
+//         y: 15,
+//         z: 100
+//     },
+//     target: {
+//         x: -666,
+//         y: 25,
+//         z: 202
+//     },
+//     range: 120,
+//     height: 100,
+//     color: '#efad35',
+//     speed: 1,
+//     size: 30
+// }, {
+//     source: {
+//         x: -150,
+//         y: 15,
+//         z: 100
+//     },
+//     target: {
+//         x: 666,
+//         y: 22,
+//         z: 0
+//     },
+//     height: 300,
+//     range: 150,
+//     color: '#ff0000',
+//     speed: 1,
+//     size: 40
+// }]
+// flyData.forEach((data) => {
+//     const mesh = Fly(data);
+//     mesh.material.uniforms.time = time;
+//     mesh.renderOrder = 10;
+//     scene.add(mesh);
+// });

@@ -175,13 +175,13 @@ export function loadRoad(scene: THREE.Scene) {
     let maxx = 0;
     let maxy = 0;
     let maxz = 0;
-    loader.load('/cxx/glbs/与道路接轨的桥/scene.gltf', (gltf) => {
+    loader.load('/glbs/与道路接轨的桥/scene.gltf', (gltf) => {
         // const temp = gltf.scene.children[0].children[0].children[0].children[0].children[0].children[4];
         const temp = gltf.scene.children[0];
-        console.log(temp);
+        // console.log(temp);
         // 4-黄线 5-桥 6-平地路网
-        const t = temp.getObjectByName('B_Col_DYel') as THREE.Mesh;
-        console.log(t.geometry.attributes.position.array)
+        // const t = temp.getObjectByName('B_Col_DYel') as THREE.Mesh;
+        // console.log(t.geometry.attributes.position.array)
         temp.traverse((object: any) => {
             if (object.isMesh) {
                 object.geometry.computeBoundingBox();

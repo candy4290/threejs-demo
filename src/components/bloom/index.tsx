@@ -79,7 +79,7 @@ export default function Bloom() {
         const effectCopy = new ShaderPass(CopyShader);
         effectCopy.renderToScreen = true;
 
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85, [cube], scene, camera,);
+        const bloomPass = new (UnrealBloomPass as any)(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85, [cube], scene, camera,);
         bloomPass.threshold = 0;
         bloomPass.strength = 1.5;
         bloomPass.radius = 0;

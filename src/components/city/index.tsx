@@ -106,6 +106,7 @@ export default function City() {
     useEffect(() => {
         init();
         return () => {
+            window.removeEventListener('resize', onWindowResize);
             destory = true;
             scene.traverse((child: any) => {
                 if (child.material) {
@@ -155,7 +156,18 @@ export default function City() {
         controls = new MapControls(camera, renderer.domElement);
         loadCity();
 
+        window.addEventListener('resize', onWindowResize);
+
         render();
+    }
+
+    function onWindowResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+        renderer.render(scene, camera);
     }
 
     function setCityMaterial(object: any) {
@@ -174,7 +186,7 @@ export default function City() {
             max.y - min.y,
             max.z - min.z
         );
-        forMaterial(object.material, (material: any) => {
+        forMaterial(object.material, (material: any) => { // 建筑慢慢变高，材质颜色变化
             // material.opacity = 0.6;
             material.transparent = true;
             material.color.setStyle("#1B3045");
@@ -221,7 +233,7 @@ export default function City() {
                     )
                 };
                 // 扩散中心点
-                shader.uniforms.uFlow = {
+                shader.uniforms.uFlow = { /* 建筑从下往上的光效 */
                     value: new THREE.Vector3(
                         1, // 0 1开关
                         10, // 范围
@@ -230,11 +242,11 @@ export default function City() {
                 };
 
                 // 效果颜色
-                shader.uniforms.uColor = {
+                shader.uniforms.uColor = { /* 波纹扩散颜色 */
                     value: new THREE.Color("#5588aa")
                 }
                 // 效果颜色
-                shader.uniforms.uFlowColor = {
+                shader.uniforms.uFlowColor = { /* 建筑从下往上的光效颜色 */
                     value: new THREE.Color("#BF3EFF")
                 }
                 // 效果透明度
@@ -408,14 +420,14 @@ export default function City() {
         surroundLineMaterial = new THREE.ShaderMaterial({
             transparent: true,
             uniforms: {
-                uColor: {
+                uColor: { /* 包围线条的颜色 */
                     value: new THREE.Color("#ffffff")
                 },
-                uActive: {
+                uActive: { /* 矩形横扫线的颜色 */
                     value: new THREE.Color("#ff0000")
                 },
                 time: time,
-                uOpacity: {
+                uOpacity: { /* 矩形横扫线的透明度 */
                     value: 0.6
                 },
                 uMax: {
@@ -424,10 +436,10 @@ export default function City() {
                 uMin: {
                     value: min,
                 },
-                uRange: {
-                    value: 200
+                uRange: { /* 矩形横扫线的宽度 */
+                    value: 100
                 },
-                uSpeed: {
+                uSpeed: { /* 矩形横扫线的速度 */
                     value: 0.2
                 },
                 uStartTime: StartTime

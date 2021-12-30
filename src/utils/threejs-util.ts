@@ -124,7 +124,7 @@ export function createUnrealBloomPass(composer: EffectComposer, scene: THREE.Sce
   composer: EffectComposer,
   bloomPass: UnrealBloomPass,
 } {
-  const bloomPass = new UnrealBloomPass(
+  const bloomPass = new (UnrealBloomPass as any)(
     new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85,
     selectedObjects, scene, camera
   );

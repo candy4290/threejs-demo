@@ -84,6 +84,7 @@ const Shader = {
         gl_FragColor = vec4(u_color, d_opacity * u_opacity);
     }`
 }
+// eslint-disable-next-line import/no-anonymous-default-export
 export default function (opts) {
     const {
         radius = 50,
@@ -142,3 +143,30 @@ export default function (opts) {
 
     return mesh
 }
+/* 示例代码 */
+// const radarData = [{
+//     position: {
+//         x: 666,
+//         y: 22,
+//         z: 0
+//     },
+//     radius: 150,
+//     color: '#ff0062',
+//     opacity: 0.5,
+//     speed: 2
+// }, {
+//     position: {
+//         x: -666,
+//         y: 25,
+//         z: 202
+//     },
+//     radius: 320,
+//     color: '#efad35',
+//     opacity: 0.6,
+//     speed: 1
+// }];
+// radarData.forEach((data) => {
+//     const mesh = Radar(data);
+//     mesh.material.uniforms.time = time;
+//     scene.add(mesh);
+// });
