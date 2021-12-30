@@ -156,6 +156,8 @@ export default function City() {
         controls = new MapControls(camera, renderer.domElement);
         loadCity();
 
+        // scene.add(new THREE.AxesHelper(1660))
+
         window.addEventListener('resize', onWindowResize);
 
         render();
@@ -189,8 +191,9 @@ export default function City() {
         forMaterial(object.material, (material: any) => { // 建筑慢慢变高，材质颜色变化
             // material.opacity = 0.6;
             material.transparent = true;
-            material.color.setStyle("#1B3045");
+            material.color.setStyle("#1B3045"); /* 建筑材质的颜色 */
             material.onBeforeCompile = (shader) => { // 在编译shader程序之前立即执行的可选回调。此函数使用shader源码作为参数。用于修改内置材质。
+                console.log(shader)
                 shader.uniforms.time = time;
                 shader.uniforms.uStartTime = StartTime;
                 // 中心点
@@ -201,35 +204,15 @@ export default function City() {
                 shader.uniforms.uSize = {
                     value: size
                 }
-                shader.uniforms.uMax = {
-                    value: max
-                }
-                shader.uniforms.uMin = {
-                    value: min
-                }
-                shader.uniforms.uTopColor = {
+                shader.uniforms.uTopColor = { /* 建筑顶部颜色 */
                     value: new THREE.Color('#00FF00')
                 }
-                // 效果开关
-                shader.uniforms.uSwitch = {
-                    value: new THREE.Vector3(
-                        0, // 扩散
-                        0, // 左右横扫
-                        0 // 向上扫描
-                    )
-                };
                 // 扩散
                 shader.uniforms.uDiffusion = { /* 从中心往外波纹扩散 */
                     value: new THREE.Vector3(
                         1, // 0 1开关
                         20, // 范围
                         600 // 速度
-                    )
-                };
-                // 扩散中心点
-                shader.uniforms.uDiffusionCenter = {
-                    value: new THREE.Vector3(
-                        0, 0, 0
                     )
                 };
                 // 扩散中心点
@@ -249,11 +232,7 @@ export default function City() {
                 shader.uniforms.uFlowColor = { /* 建筑从下往上的光效颜色 */
                     value: new THREE.Color("#BF3EFF")
                 }
-                // 效果透明度
-                shader.uniforms.uOpacity = {
-                    value: 1
-                }
-                // 效果透明度
+                // 波纹扩散半径
                 shader.uniforms.uRadius = {
                     value: radius
                 }
@@ -290,17 +269,13 @@ export default function City() {
                     // 初始动画参数
                     uniform float uStartTime; 
 
-                    uniform vec3 uMin;
-                    uniform vec3 uMax;
                     uniform vec3 uSize;
                     uniform vec3 uFlow;
                     uniform vec3 uColor;
                     uniform vec3 uCenter;
-                    uniform vec3 uSwitch;
                     uniform vec3 uTopColor;
                     uniform vec3 uFlowColor;
                     uniform vec3 uDiffusion; 
-                    uniform vec3 uDiffusionCenter;
 
                     void main() {
                 `;
@@ -311,7 +286,7 @@ export default function City() {
                     float indexMix = vPosition.z / (uSize.z * 0.6);
                     distColor = mix(distColor, uTopColor, indexMix);
                     
-                    // 开启扩散波
+                    // 开启扩散波-波纹扩散效果
                     vec2 position2D = vec2(vPosition.x, vPosition.y);
                     if (uDiffusion.x > 0.5) {
                         // 扩散速度
@@ -345,8 +320,8 @@ export default function City() {
                     gl_FragColor = vec4(distColor, dstOpacity * uStartTime);
                 `;
                 shader.fragmentShader = shader.fragmentShader.replace("void main() {", fragment)
-                shader.fragmentShader = shader.fragmentShader.replace("gl_FragColor = vec4( outgoingLight, diffuseColor.a );", fragmentColor);
-
+                shader.fragmentShader = shader.fragmentShader.replace("#include <output_fragment>", fragmentColor);
+                    console.log(shader.fragmentShader)
                 /**
                  * 对顶点着色器进行修改
                  */
@@ -364,6 +339,7 @@ export default function City() {
 
                 shader.vertexShader = shader.vertexShader.replace("void main() {", vertex);
                 shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>", vertexPosition);
+                console.log(shader.vertexShader)
             }
         })
     }
