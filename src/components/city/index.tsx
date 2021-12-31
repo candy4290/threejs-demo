@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { Water } from 'three/examples/jsm/objects/Water';
 import { forMaterial, surroundLineGeometry } from './three-info';
 import Shader from './shader';
 import {
@@ -9,6 +10,7 @@ import {
     Wall,
     Fly
 } from './effect/index';
+import * as dat from 'dat.gui';
 
 /**
  * 智慧城市光影效果
@@ -23,6 +25,32 @@ let controls: MapControls;
 let clock = new THREE.Clock();
 let destory;
 let rafId;
+let water: Water;
+let gui: dat.GUI;
+let settings: any = {};
+let radar: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
+let wall: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
+let fly: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
+const boWen = { /* 从中心往外波纹扩散 */
+    value: new THREE.Vector3(
+        1, // 0 1开关
+        20, // 范围
+        600 // 速度
+    )
+};; /* 波纹扩散效果 */
+const saoGuang = { /* 建筑从下往上的光效 */
+    value: new THREE.Vector3(
+        1, // 0 1开关
+        10, // 范围
+        60 // 速度
+    )
+}
+const uSpeed = { /* 矩形横扫线的透明度 */
+    value: 0.2
+};
+const uRange = {
+    value: 200
+}
 
 let isStart = false;
 const time = {
@@ -66,7 +94,7 @@ const wallData = [{
     radius: 420,
     height: 120,
     renderOrder: 5
-},]
+}]
 const flyData = [{
     source: {
         x: -150,
@@ -106,6 +134,7 @@ export default function City() {
     useEffect(() => {
         init();
         return () => {
+            gui.destroy();
             window.removeEventListener('resize', onWindowResize);
             destory = true;
             scene.traverse((child: any) => {
@@ -126,6 +155,11 @@ export default function City() {
             camera = null as any;
             scene = null as any;
             controls = null as any;
+            gui = null as any;
+            radar = null as any;
+            wall = null as any;
+            fly = null as any;
+            water = null as any;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -154,8 +188,14 @@ export default function City() {
         renderer.setClearColor(new THREE.Color('#32373E'), 1);
 
         controls = new MapControls(camera, renderer.domElement);
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2.01;
+        controls.screenSpacePanning = false;
+        controls.target.set(2, 0, 0);
         loadCity();
 
+        createPanel();
         // scene.add(new THREE.AxesHelper(1660))
 
         window.addEventListener('resize', onWindowResize);
@@ -170,6 +210,77 @@ export default function City() {
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
         renderer.render(scene, camera);
+    }
+
+    /* 创建GUI */
+    function createPanel() {
+        dat.GUI.TEXT_CLOSED = '关闭Controls';
+        dat.GUI.TEXT_OPEN = '打开Controls';
+        gui = new dat.GUI();
+        const folder = gui.addFolder('特效');
+        settings = {
+            '河流': false,
+            '雷达扫描': true,
+            '建筑扫光': true,
+            '投递飞线': true,
+            '光墙': true,
+            '波纹扩散': true,
+            '横扫光线': true
+        }
+        folder.add(settings, '河流').onChange(e => {
+            if (e) {
+                if (!water) {
+                    setRiver();
+                }
+                scene.add(water);
+            } else {
+                scene.remove(water);
+            }
+        })
+        folder.add(settings, '横扫光线').onChange(e => {
+            uSpeed.value = e ? 0.2 : 0;
+            uRange.value = e ? 200 : 0;
+        })
+        folder.add(settings, '波纹扩散').onChange(e => {
+            boWen.value.setX(+e);
+        })
+        folder.add(settings, '建筑扫光').onChange(e => {
+            saoGuang.value.setX(+e);
+        })
+        folder.add(settings, '雷达扫描').onChange(e => {
+            if (e) {
+                radar.forEach(item => {
+                    scene.add(item);
+                })
+            } else {
+                radar.forEach(item => {
+                    scene.remove(item);
+                })
+            }
+        })
+        folder.add(settings, '投递飞线').onChange(e => {
+            if (e) {
+                fly.forEach(item => {
+                    scene.add(item);
+                })
+            } else {
+                fly.forEach(item => {
+                    scene.remove(item);
+                })
+            }
+        })
+        folder.add(settings, '光墙').onChange(e => {
+            if (e) {
+                wall.forEach(item => {
+                    scene.add(item);
+                })
+            } else {
+                wall.forEach(item => {
+                    scene.remove(item);
+                })
+            }
+        })
+        folder.open();
     }
 
     function setCityMaterial(object: any) {
@@ -193,7 +304,6 @@ export default function City() {
             material.transparent = true;
             material.color.setStyle("#1B3045"); /* 建筑材质的颜色 */
             material.onBeforeCompile = (shader) => { // 在编译shader程序之前立即执行的可选回调。此函数使用shader源码作为参数。用于修改内置材质。
-                console.log(shader)
                 shader.uniforms.time = time;
                 shader.uniforms.uStartTime = StartTime;
                 // 中心点
@@ -205,24 +315,12 @@ export default function City() {
                     value: size
                 }
                 shader.uniforms.uTopColor = { /* 建筑顶部颜色 */
-                    value: new THREE.Color('#00FF00')
+                    value: new THREE.Color('#1485A6')
                 }
                 // 扩散
-                shader.uniforms.uDiffusion = { /* 从中心往外波纹扩散 */
-                    value: new THREE.Vector3(
-                        1, // 0 1开关
-                        20, // 范围
-                        600 // 速度
-                    )
-                };
+                shader.uniforms.uDiffusion = boWen; /* 水波纹扩散效果 */
                 // 扩散中心点
-                shader.uniforms.uFlow = { /* 建筑从下往上的光效 */
-                    value: new THREE.Vector3(
-                        1, // 0 1开关
-                        10, // 范围
-                        60 // 速度
-                    )
-                };
+                shader.uniforms.uFlow = saoGuang; /* 建筑从下往上扫光效果 */
 
                 // 效果颜色
                 shader.uniforms.uColor = { /* 波纹扩散颜色 */
@@ -321,7 +419,6 @@ export default function City() {
                 `;
                 shader.fragmentShader = shader.fragmentShader.replace("void main() {", fragment)
                 shader.fragmentShader = shader.fragmentShader.replace("#include <output_fragment>", fragmentColor);
-                    console.log(shader.fragmentShader)
                 /**
                  * 对顶点着色器进行修改
                  */
@@ -339,7 +436,6 @@ export default function City() {
 
                 shader.vertexShader = shader.vertexShader.replace("void main() {", vertex);
                 shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>", vertexPosition);
-                console.log(shader.vertexShader)
             }
         })
     }
@@ -397,27 +493,23 @@ export default function City() {
             transparent: true,
             uniforms: {
                 uColor: { /* 包围线条的颜色 */
-                    value: new THREE.Color("#ffffff")
+                    value: new THREE.Color("#11A4A1")
                 },
                 uActive: { /* 矩形横扫线的颜色 */
-                    value: new THREE.Color("#ff0000")
+                    value: new THREE.Color("#ffffff")
                 },
                 time: time,
-                uOpacity: { /* 矩形横扫线的透明度 */
+                uOpacity: {
                     value: 0.6
-                },
+                }, /* 矩形横扫线的透明度 */
                 uMax: {
                     value: max,
                 },
                 uMin: {
                     value: min,
                 },
-                uRange: { /* 矩形横扫线的宽度 */
-                    value: 100
-                },
-                uSpeed: { /* 矩形横扫线的速度 */
-                    value: 0.2
-                },
+                uRange: uRange, /* 矩形横扫线的宽度 */
+                uSpeed: uSpeed, /* 矩形横扫线的速度 */
                 uStartTime: StartTime
             },
             // 顶点着色器的GLSL代码。(OpenGL Shading Language)
@@ -434,10 +526,34 @@ export default function City() {
         })
     }
 
+    function setRiver() {
+        const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
+        water = new Water(
+            waterGeometry,
+            {
+                textureWidth: 512,
+                textureHeight: 512,
+                waterNormals: new THREE.TextureLoader().load('/textures/waternormals.jpg', function ( texture ) {
+                    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                } ),
+                sunDirection: new THREE.Vector3(),
+                sunColor: 0xffffff,
+                waterColor: 0x001e0f,
+                distortionScale: 3.7,
+                fog: scene.fog !== undefined
+            }
+        );
+        water.rotation.x = - Math.PI / 2;
+        water.position.setY(8)
+    }
+
     function loadCity() {
         // 需要做城市效果的mesh 
-        const cityArray = ['CITY_UNTRIANGULATED'];
-        const floorArray = ['LANDMASS'];
+        const cityArray = ['CITY_UNTRIANGULATED']; // 建筑
+        const floorArray = ['LANDMASS']; // 地面
+        // const riverArray = ['drive']; //不知道是啥
+        // const roadsArray = ['ROADS']; //路网
+        // const chairArray = ['chair']; //不知道是啥
 
         const fbxLoader = new FBXLoader();
         fbxLoader.load('/fbxs/shanghai.FBX', fbx => {
@@ -452,27 +568,31 @@ export default function City() {
                 }
             })
             scene.add(fbx);
+            // setRiver();
             const t$ = setTimeout(() => {
                 isStart = true;
                 // 加载扫描效果
-                // radarData.forEach((data) => {
-                //     const mesh = Radar(data);
-                //     mesh.material.uniforms.time = time;
-                //     scene.add(mesh);
-                // });
-                // // 光墙
-                // wallData.forEach((data) => {
-                //     const mesh = Wall(data);
-                //     mesh.material.uniforms.time = time;
-                //     scene.add(mesh);
-                // });
-                // // 飞线
-                // flyData.forEach((data) => {
-                //     const mesh = Fly(data);
-                //     mesh.material.uniforms.time = time;
-                //     mesh.renderOrder = 10;
-                //     scene.add(mesh);
-                // });
+                radarData.forEach((data) => {
+                    const mesh = Radar(data);
+                    mesh.material.uniforms.time = time;
+                    radar.push(mesh);
+                    scene.add(mesh);
+                });
+                // 光墙
+                wallData.forEach((data) => {
+                    const mesh = Wall(data);
+                    mesh.material.uniforms.time = time;
+                    wall.push(mesh);
+                    scene.add(mesh);
+                });
+                // 飞线
+                flyData.forEach((data) => {
+                    const mesh = Fly(data);
+                    mesh.material.uniforms.time = time;
+                    mesh.renderOrder = 10;
+                    fly.push(mesh)
+                    scene.add(mesh);
+                });
                 clearTimeout(t$);
             }, 1000);
         })
@@ -494,6 +614,9 @@ export default function City() {
             }
         }
         controls?.update();
+        if (water) {
+            water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+        }
         renderer?.render(scene, camera);
         rafId = requestAnimationFrame(render);
     }

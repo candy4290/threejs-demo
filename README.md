@@ -5,57 +5,57 @@
 ### three.js使用右手坐标系（x正方向向右，y正方向向上，z正方向指向屏幕外面）
 
 ### 问题及解决思路记录
- -1.three.meshline实现有宽度的线，但是存在问题，需要修改第三方包的代码 https://github.com/spite/THREE.MeshLine/issues/139
- 0.通过light.target属性，让平行光追踪物体
- 1.hover效果/outline（未生效原因解决,需要修改第三方包的代码：https://www.jianshu.com/p/5563645b7e15）
+ - 1.three.meshline实现有宽度的线，但是存在问题，需要修改第三方包的代码 https://github.com/spite/THREE.MeshLine/issues/139
+ - 0.通过light.target属性，让平行光追踪物体
+ - 1.hover效果/outline（未生效原因解决,需要修改第三方包的代码：https://www.jianshu.com/p/5563645b7e15）
  或者：EffectComposer.readBuffer.texture.encoding = renderer.outputEncoding;
- 2.轨迹如何画（要求直线连接点）
-TubeGeometry可能导致未包含所有顶点----因为均匀分段后未必经过顶点
+ - 2.轨迹如何画（要求直线连接点）
+ - TubeGeometry可能导致未包含所有顶点----因为均匀分段后未必经过顶点
 TubeGeometry如何才能包含所有生成curve的点？？？？
 导航线如何绘制？
 
- 3.gps坐标与模型上坐标映射(
+ - 3.gps坐标与模型上坐标映射(
  只需要在模型中设立中心点位的坐标以及比例尺(目前1:1)以及旋转角度
  问题：模型上坐标如何推导出gps坐标
  )
- 4.模型上距离测算
- 5.视角跟随（已经单位向量切线、向量的切线的终点、模、求解向量切线的起点）
- 6.始终面向相机的POI注释
- 7.天空盒准备（一个下拉列表/白天-黑夜-下雨-下雪-阴天）
- 8.效果展示（泛光-扫描-水波纹扩散-动态符号线/符号线流动-动态线流-光锥-墙贴图动画-模型  线框-鼠标右击功能开发-相机自动迅游）
- 9.小地图展示---renderer开启剪裁检测，使用一个额外的camera
- 10.欧拉角
-11.摄像机从一个点飞到另外一个点的效果制作（flyTo）
+ - 4.模型上距离测算
+ - 5.视角跟随（已经单位向量切线、向量的切线的终点、模、求解向量切线的起点）
+ - 6.始终面向相机的POI注释
+ - 7.天空盒准备（一个下拉列表/白天-黑夜-下雨-下雪-阴天）
+ - 8.效果展示（泛光-扫描-水波纹扩散-动态符号线/符号线流动-动态线流-光锥-墙贴图动画-模型  线框-鼠标右击功能开发-相机自动迅游）
+ - 9.小地图展示---renderer开启剪裁检测，使用一个额外的camera
+ - 10.欧拉角
+ - 11.摄像机从一个点飞到另外一个点的效果制作（flyTo）:利用tween.js
 
-可以做的思路：
-使用天空盒（6张图）和等矩形贴图以及HDR贴图(RGBELoader)可以制作3d背景
-基于Raycaster的碰撞检测
-立体浮雕效果和视差屏障效果AnaglyphEffect
-双屏渲染效果StereoEffect
-VertexTangentsHelper-切线辅助对象
-VertexNormalsHelper-法线辅助对象
-MeshSurfaceSampler-均匀分散到物体表面
-layers----摄像机可以只渲染某个层级的物体
-LensflareElement----模拟太阳光的光晕/炫光效果
-光照探针
-TWEEN-实现聚光灯移动、变向等效果
-多材质切换：KHR_materials_variants插件
-将图片加载为纹理：ImageLoader
-MD2模型是一种古老的支持帧动画的模型格式
-将物体缓慢转动到某个方向：webgl_math_orientation_transform.html
-使用Reflector创建镜子
-让文字验证三维曲线运动：CurveModifier
-下雪：可以使用贴图实现-webgl_points_sprites.html
-水面：jsm/objects/Water2.js
-运动幻影效果处理:AfterimagePass
-背景虚拟化模糊：jsm/postprocessing/BokehPass.js
-泛光/炫光 效果：UnrealBloomPass
-声音相关：webaudio
-我们的底图效果，应该使用MapControls
-拖拽效果思路：
+可以做的思路：  
+- 使用天空盒（6张图）和等矩形贴图以及HDR贴图(RGBELoader)可以制作3d背景
+- 基于Raycaster的碰撞检测
+- 立体浮雕效果和视差屏障效果AnaglyphEffect
+- 双屏渲染效果StereoEffect
+- VertexTangentsHelper-切线辅助对象
+- VertexNormalsHelper-法线辅助对象
+- MeshSurfaceSampler-均匀分散到物体表面
+- layers----摄像机可以只渲染某个层级的物体
+- LensflareElement----模拟太阳光的光晕/炫光效果
+- 光照探针
+- TWEEN-实现聚光灯移动、变向等效果
+- 多材质切换：KHR_materials_variants插件
+- 将图片加载为纹理：ImageLoader
+- MD2模型是一种古老的支持帧动画的模型格式
+- 将物体缓慢转动到某个方向：webgl_math_orientation_transform.html
+- 使用Reflector创建镜子
+- 让文字验证三维曲线运动：CurveModifier
+- 下雪：可以使用贴图实现-webgl_points_sprites.html
+- 水面：jsm/objects/Water2.js
+- 运动幻影效果处理:AfterimagePass
+- 背景虚拟化模糊：jsm/postprocessing/BokehPass.js
+- 泛光/炫光 效果：UnrealBloomPass
+- 声音相关：webaudio
+- 我们的底图效果，应该使用MapControls
+- 拖拽效果思路：
 three.js中进行拖拽-----TransformControls+导出成gltf(将一个scene导出来)
 凹凸贴图: 使纹理有厚度-看起来更加立体，凹凸贴图一般使用一张灰度图，设置成材料的bumpMap属性
-*法向贴图: 使用一张法向图来表示纹理图片某个点的法向量。即用一张图片保存另一张图片的法向量信息，
+- *法向贴图: 使用一张法向图来表示纹理图片某个点的法向量。即用一张图片保存另一张图片的法向量信息，
          * 然后再在threejs中将这两个图片的信息合在一起，就形成了一个细节丰富的立体纹理
          * 设置材质的 normalMap 属性
 
@@ -63,19 +63,40 @@ three.js中进行拖拽-----TransformControls+导出成gltf(将一个scene导出
 
 
 需要看的东西：
-1.ShaderMaterial
-2.webgl_geometry_extrude_splines
-3.法线贴图
+- 1.ShaderMaterial
+- 2.webgl_geometry_extrude_splines
+- 3.法线贴图
+ 
+fxaa效果一般、开销很小，无法解决线的锯齿问题，带来模糊  
+SSAA：效果最好，开销太大  
+taa: 有动画时失效  
 
-fxaa效果一般、开销很小，无法解决线的锯齿问题，带来模糊
-SSAA：效果最好，开销太大
-taa: 有动画时失效
+getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-between-getpoint-and-getpointat-methods/6637/2  
+模型闪烁问题处理：renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });---但是这样会造成卡顿  
 
-getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-between-getpoint-and-getpointat-methods/6637/2
-模型闪烁问题处理：renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });---但是这样会造成卡顿
-
+### 着色器材质内置变量
+- gl_PointSize  
+gl_PointSize内置变量是一个float类型，在点渲染模式中，顶点由于是一个点，理论上我们并无法看到，所以他是以一个正对着相机的正方形面表现的。使用内置变量gl_PointSize主要是用来设置顶点渲染出来的正方形面的相素大小（默认值是0）。
+void main() {
+  gl_PointSize = 10.0；
+}
+- gl_Position  
+gl_Position内置变量是一个vec4类型，它表示最终传入片元着色器片元化要使用的顶点位置坐标。vec4(x,y,z,1.0),前三个参数表示顶点的xyz坐标值，第四个参数是浮点数1.0。
+void main() {
+	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}
+- gl_FragColor  
+gl_FragColor内置变量是vec4类型，主要用来设置片元像素的颜色，它的前三个参数表示片元像素颜色值RGB，第四个参数是片元像素透明度A，1.0表示不透明,0.0表示完全透明。
+void main() {
+	gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+}
+- gl_FragCoord  
+gl_FragCoord内置变量是vec2类型，它表示WebGL在canvas画布上渲染的所有片元或者说像素的坐标，坐标原点是canvas画布的左上角，x轴水平向右，y竖直向下，gl_FragCoord坐标的单位是像素，gl_FragCoord的值是vec2(x,y),通过gl_FragCoord.x、gl_FragCoord.y方式可以分别访问片元坐标的纵横坐标。
+- gl_PointCoord  
+gl_PointCoord内置变量也是vec2类型，同样表示像素的坐标，但是与gl_FragCoord不同的是，gl_FragCoord是按照整个canvas算的x值从[0,宽度]，y值是从[0,高度]。而gl_PointCoord是在点渲染模式中生效的，而它的范围是对应小正方形面，同样是左上角[0,0]到右下角[1,1]。
 
 ### jsx标签注释
+``` javascript
  {
     /* 
     <div className={`${prefix}-first-right`} onClick={goWisdomSearch}>
@@ -84,6 +105,7 @@ getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-bet
     </div>
     */
 }
+```
 
 ### ie兼容处理
 npm install @babel/polyfill --save
@@ -91,25 +113,26 @@ npm install --save core-js@3
 app.js顶部引入import '@babel/polyfill'
 
 ### vscode插件推荐
-Auto Rename Tag
-Color Picker
-Debugger for Chrome
-Document This
-Eclipse Keymap
-EditorConfig for VS Code
-ENV
-ESLint
-file-icons
-Git History
-gitignore
-JavaScript(ES6) code snippets
-Prettier - Code formatter
-React/Redux/react-router Snippets
-Svg Preview
-TODO Highlight
-vscode-json
+Auto Rename Tag  
+Color Picker  
+Debugger for Chrome  
+Document This  
+Eclipse Keymap  
+EditorConfig for VS Code  
+ENV  
+ESLint  
+file-icons  
+Git History  
+gitignore  
+JavaScript(ES6) code snippets  
+Prettier - Code formatter  
+React/Redux/react-router Snippets  
+Svg Preview  
+TODO Highlight  
+vscode-json  
 Path Intellisense 用来处理路径别名，在vscode中可以自动提示，跳转等功能
 
+``` javascript
 /**
  * @author spidersharma / http://eduperiment.com/
  *
@@ -598,3 +621,4 @@ UnrealBloomPass.BlurDirectionX = new Vector2(1.0, 0.0);
 UnrealBloomPass.BlurDirectionY = new Vector2(0.0, 1.0);
 
 export { UnrealBloomPass };
+```
