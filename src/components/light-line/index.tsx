@@ -22,24 +22,24 @@ export default function LightLine() {
         renderer.setSize(window.innerWidth, window.innerHeight);
 
         /* 添加灯光效果 */
-        const directionalLight = new THREE.DirectionalLight( '#fff' )
-        directionalLight.position.set( 30, 30, 30 ).normalize()
-        scene.add( directionalLight )
-        const ambientLight = new THREE.AmbientLight('#fff',0.3) // obj 唯一 id
-        scene.add(ambientLight)
+        // const directionalLight = new THREE.DirectionalLight( '#fff' )
+        // directionalLight.position.set( 30, 30, 30 ).normalize()
+        // scene.add( directionalLight )
+        // const ambientLight = new THREE.AmbientLight('#fff',0.3) // obj 唯一 id
+        // scene.add(ambientLight)
 
         const axesHelper = new THREE.AxesHelper(50); /* 辅助坐标轴，z-蓝色 x-红色 y-绿色 */
         scene.add(axesHelper);
 
-        const grid = new THREE.GridHelper(10, 10);
-        scene.add(grid);
+        // const grid = new THREE.GridHelper(10, 10);
+        // scene.add(grid);
 
          //管道线：
          const list =  [
-            [-20,5,-10],
-            [10,5,-9],
-            [10,5,20],
-            [40,5,40]
+            [-20,15,-10],
+            [10,15,-9],
+            [10,15,20],
+            [40,15,40]
         ]
         //获取线 geo
         const getLineGeo = list =>{

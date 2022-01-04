@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import Stats from 'stats.js';
 // import MapTest from './components/openlayer';
 // import UnrealBloom from './components/unreal-bloom';
-// import Car1 from './components/car1';
+import Car1 from './components/car1';
 // import Bloom from './components/bloom';
 import {BrowserCheck} from '@kzlib/kcomponents';
 // import Car2 from './components/car2';
@@ -21,14 +21,16 @@ import {BrowserCheck} from '@kzlib/kcomponents';
 // import Cannon4 from './components/cannon4';
 // import Cannon5 from './components/cannon5';
 import City from './components/city';
-// import ShaderMaterial from './components/shader-material';
+import ShaderMaterial from './components/shader-material';
+import ShaderMaterial2 from './components/shader-material2';
+import ShaderMaterial3 from './components/shader-material3';
 // import Glsl1 from './components/glsl1';
 // import Glsl2 from './components/glsl2';
 // import Glsl3 from './components/glsl3';
 // import Shader1 from './components/shader1';
 // import Sea from './components/sea';
 // import Light from './components/light';
-// import LightLine from './components/light-line';
+import LightLine from './components/light-line';
 
 function App() {
   const mainRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,8 @@ function App() {
       {/* <Car2 /> */}
       <City />
       {/* <ShaderMaterial /> */}
+      {/* <ShaderMaterial2 /> */}
+      {/* <ShaderMaterial3 /> */}
       {/* <Glsl1 /> */}
       {/* <Glsl2 /> */}
       {/* <Glsl3 /> */}

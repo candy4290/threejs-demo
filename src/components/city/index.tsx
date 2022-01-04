@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { Water } from 'three/examples/jsm/objects/Water';
-import { forMaterial, surroundLineGeometry } from './three-info';
+import { createCarsBindTrace, createLightLine, forMaterial, surroundLineGeometry } from './three-info';
 import Shader from './shader';
 import {
     Radar,
@@ -11,6 +11,8 @@ import {
     Fly
 } from './effect/index';
 import * as dat from 'dat.gui';
+import { flyTo2 } from "../car2/three-info";
+import TWEEN from '@tweenjs/tween.js'
 
 /**
  * 智慧城市光影效果
@@ -22,6 +24,7 @@ let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
 let controls: MapControls;
+let texture: THREE.Texture;
 let clock = new THREE.Clock();
 let destory;
 let rafId;
@@ -127,7 +130,13 @@ const flyData = [{
     color: '#ff0000',
     speed: 1,
     size: 40
-}]
+}];
+
+let raycaster: THREE.Raycaster;
+const mouse = new THREE.Vector2();
+let trace: THREE.Vector3[] = []; /* 轨迹点位 */
+const carList: any[] = [];
+let testCarModels: any[] = [];
 
 export default function City() {
 
@@ -197,8 +206,85 @@ export default function City() {
 
         createPanel();
         // scene.add(new THREE.AxesHelper(1660))
+        /* 亮的轨迹线条 */
+        texture = createLightLine([
+            {
+                "x": 802.3299904494879,
+                "y": 19.068050175905103,
+                "z": 592.01164608935
+            },
+            {
+                "x": 762.3812541386974,
+                "y": 19.068050175905103,
+                "z": 588.6219318478661
+            },
+            {
+                "x": 212.6744889891521,
+                "y": 19.068050175905135,
+                "z": 442.46940951320863
+            },
+            {
+                "x": -73.43457228885484,
+                "y": 19.068050175905142,
+                "z": 410.78540672854035
+            },
+            {
+                "x": -217.3569209044227,
+                "y": 19.068050175905142,
+                "z": 403.8402612615073
+            },
+            {
+                "x": -293.4935704052756,
+                "y": 19.079523980617438,
+                "z": 403.90291874080845
+            },
+            {
+                "x": -336.60063378316784,
+                "y": 19.079523980617495,
+                "z": 406.3164539934255
+            },
+            {
+                "x": -401.95896358305777,
+                "y": 24.999999999999954,
+                "z": 403.287424706611
+            },
+            {
+                "x": -619.8293525260625,
+                "y": 25.000000000000018,
+                "z": 380.2697164886164
+            },
+            {
+                "x": -823.6070186623097,
+                "y": 24.999999999999964,
+                "z": 362.46967760421717
+            },
+            {
+                "x": -869.7286494702976,
+                "y": 24.999999999999964,
+                "z": 360.4253454753446
+            },
+            {
+                "x": -905.9031173189951,
+                "y": 24.999999999999908,
+                "z": 368.9510160542171
+            },
+            {
+                "x": -942.5975268080412,
+                "y": 24.99999999999996,
+                "z": 372.49738076684383
+            },
+            {
+                "x": -1070.3638281944845,
+                "y": 19.068050175905153,
+                "z": 360.62147159221206
+            }
+        ].map(item => [item.x, item.y, item.z]), scene);
+
+        raycaster = new THREE.Raycaster();
 
         window.addEventListener('resize', onWindowResize);
+
+        createCarsBindTrace(scene, carList, testCarModels);
 
         render();
     }
@@ -218,6 +304,8 @@ export default function City() {
         dat.GUI.TEXT_OPEN = '打开Controls';
         gui = new dat.GUI();
         const folder = gui.addFolder('特效');
+        const folder1 = gui.addFolder('视角');
+        const folder2 = gui.addFolder('个人调试');
         settings = {
             '河流': false,
             '雷达扫描': true,
@@ -225,7 +313,20 @@ export default function City() {
             '投递飞线': true,
             '光墙': true,
             '波纹扩散': true,
-            '横扫光线': true
+            '横扫光线': true,
+            '开启射线': false,
+            '打印点位': () => {
+                console.log(trace);
+            },
+            '清空点位': () => {
+                trace = [];
+            },
+            '相机/控制器位置': () => {
+                const t = camera.position;
+                const t2 = controls.target;
+                console.log([[t.x, t.y, t.z], [t2.x, t2.y, t2.z]])
+            },
+            '相机跟随': '不跟随',
         }
         folder.add(settings, '河流').onChange(e => {
             if (e) {
@@ -281,6 +382,67 @@ export default function City() {
             }
         })
         folder.open();
+
+        // folder1.add(settings, '前往下一个巡逻点');
+        folder1.add(settings, '相机跟随', ['不跟随', '红车', '黄车', '黑车', '白车', '绿车', '蓝车', '粉色']).onChange(e => {
+            const temp = {
+                '不跟随': '',
+                '红车': 'red',
+                '黄车': 'yellow',
+                '黑车': 'black',
+                '白车': 'white',
+                '绿车': 'green',
+                '蓝车': 'blue',
+                '粉色': 'pink'
+            };
+            carList.forEach(item => {
+                item.follow = temp[e] === item.color;
+            })
+            if (e === '不跟随') {
+                // controls.reset();
+                flyTo2(controls, {
+                    position: [-10,839,-1927],
+                    duration:500,
+                    controls: [-484,-2.4,448],
+                    done: () => {
+                       console.log('down')
+                    }
+                }, camera)
+            }
+        });
+        folder1.open();
+
+        folder2.add(settings, '开启射线').onChange(e => {
+            if (e) {
+                window.addEventListener('mousemove', onMouseMove, false);
+                window.addEventListener('dblclick', dbClick);
+            } else {
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('dblclick', dbClick);
+            }
+        });
+        folder2.add(settings, '打印点位');
+        folder2.add(settings, '清空点位');
+        folder2.add(settings, '相机/控制器位置');
+        folder2.open();
+    }
+
+     /* 
+        射线一直存在
+        双击记录点
+    */
+    function onMouseMove(event) {
+    }
+
+    function dbClick(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera)
+        const intersects = raycaster.intersectObjects(scene.children);
+        if (intersects.length > 0) {
+            trace.push(intersects[0].point)
+        }
     }
 
     function setCityMaterial(object: any) {
@@ -479,9 +641,9 @@ export default function City() {
         scene.add(line);
     }
 
-     /**
-     * 创建包围线条材质
-     */
+    /**
+    * 创建包围线条材质
+    */
     function createSurroundLineMaterial({
         max,
         min,
@@ -527,15 +689,15 @@ export default function City() {
     }
 
     function setRiver() {
-        const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
+        const waterGeometry = new THREE.PlaneGeometry(10000, 10000);
         water = new Water(
             waterGeometry,
             {
                 textureWidth: 512,
                 textureHeight: 512,
-                waterNormals: new THREE.TextureLoader().load('/textures/waternormals.jpg', function ( texture ) {
+                waterNormals: new THREE.TextureLoader().load('/textures/waternormals.jpg', function (texture) {
                     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-                } ),
+                }),
                 sunDirection: new THREE.Vector3(),
                 sunColor: 0xffffff,
                 waterColor: 0x001e0f,
@@ -599,11 +761,48 @@ export default function City() {
     }
 
     function render() {
+        TWEEN.update();
+        const dt = clock.getDelta();
+        carList.forEach(item => {
+            if (item.progress < 1 && !item.paused) {
+                const temp = dt * (item.speed * 1000 / 3600) / item.catmullRomCurve3Length;
+                const time = -performance.now() / 1000;
+                for (let i = 0; i < item.wheels.length; i++) { /* 转动车轮 */
+                    item.wheels[i].rotation.x = time * Math.PI;
+                }
+                item.progress += temp;
+                if (item.progress >= 1) {
+                    item.progress = 1;
+                    item.speed = (Math.floor(Math.random() * 60) + 60);
+                }
+                let point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
+                
+                const tangent = item.catmullRomCurve3.getTangentAt(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
+                const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
+
+                const point1 = item.catmullRomCurve3.getPointAt(item.progress - 0.0001);
+                if (point && point.x) {
+                    item.position.copy(point);
+                    if (item.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
+                        item.lookAt(point1); /* 转弯、掉头动作 */
+                        if (item.follow) {
+                            camera.position.copy(startPoint).setY(startPoint.y + 3);
+                            controls.target.copy(point);
+                        }
+                    }
+                }
+            } else if (item.progress >= 1 && !item.paused) {
+                item.progress = 0;
+            }
+
+        });
+        if (texture) {
+            texture.offset.x -= 0.01;
+        }
         if (destory && rafId) {
             cancelAnimationFrame(rafId);
         }
-        const dt = clock.getDelta();
-        if (dt <=1 ) {
+        if (dt <= 1) {
             time.value += dt; /* 扫光 */
             if (isStart) {
                 StartTime.value += dt * 0.5; /* 建筑慢慢长高 */
@@ -615,7 +814,7 @@ export default function City() {
         }
         controls?.update();
         if (water) {
-            water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
+            water.material.uniforms['time'].value += 1.0 / 60.0;
         }
         renderer?.render(scene, camera);
         rafId = requestAnimationFrame(render);
