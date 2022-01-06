@@ -14,6 +14,9 @@ import * as dat from 'dat.gui';
 import { flyTo2 } from "../car2/three-info";
 import TWEEN from '@tweenjs/tween.js'
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
+import './index.less';
+
 let flyIndex = 0;
 /**
  * 智慧城市光影效果
@@ -21,6 +24,9 @@ let flyIndex = 0;
  * @export
  * @return {*} 
  */
+let labelRenderer: CSS2DRenderer;
+let cSS2DObject2: CSS2DObject[] = [];
+
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
@@ -139,7 +145,6 @@ let raycaster: THREE.Raycaster;
 const mouse = new THREE.Vector2();
 let trace: THREE.Vector3[] = []; /* 轨迹点位 */
 const carList: any[] = [];
-let showCar = false; /* 显示车辆 */
 let testCarModels: any[] = [];
 
 export default function City() {
@@ -173,6 +178,7 @@ export default function City() {
             wall = null as any;
             fly = null as any;
             water = null as any;
+            cSS2DObject2 = null as any;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -203,10 +209,11 @@ export default function City() {
         controls = new MapControls(camera, renderer.domElement);
         controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
         controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2.01;
+        controls.maxPolarAngle = Math.PI / 2.02;
         controls.screenSpacePanning = false;
         controls.target.set(2, 0, 0);
         loadCity();
+        load2DBoard();
         
         createPanel();
         
@@ -315,13 +322,52 @@ export default function City() {
         });
     }
 
+    function load2DBoard() {
+        /* 精灵材质-始终面向摄像机 */
+        // const map = new THREE.TextureLoader().load( "/textures/dt.png" );
+        // const material = new THREE.SpriteMaterial( { map: map } );
+        // const sprite = new THREE.Sprite( material );
+        // sprite.scale.set(10,10,10);
+        // sprite.position.set(18, 80, 700)
+        // scene.add( sprite );
+
+        labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        document.querySelector('#parent')?.appendChild(labelRenderer.domElement);
+
+        const list = [
+            {name: '东方明珠', position: [-530.58, 408.97, 1347.14]},
+            {name: '世贸大厦', position: [-286.36, 296.73, -634.51]}
+        ]
+        const createLabel = (item: {name: string, position: [number,number,number]}) => {
+            const dingPaiDiv = document.createElement('div');
+            dingPaiDiv.className = 'box2';
+            dingPaiDiv.innerHTML = `
+                <div class="box2-block">
+                    <div class="box2-block-content">
+                        <p>${item.name}</p>
+                    </div>
+                </div>
+            `;
+            const dingPaiLable = new CSS2DObject(dingPaiDiv);
+            dingPaiLable.position.set(...item.position);
+            cSS2DObject2.push(dingPaiLable);
+            scene.add(dingPaiLable);
+        }
+        list.forEach((item: any) => {
+            createLabel(item)
+        });
+    }
+
     function onWindowResize() {
         const width = window.innerWidth;
         const height = window.innerHeight;
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
-        renderer.render(scene, camera);
+        labelRenderer?.setSize(width, height);
     }
 
     /* 创建GUI */
@@ -333,6 +379,7 @@ export default function City() {
         const folder1 = gui.addFolder('视角');
         const folder2 = gui.addFolder('个人调试');
         settings = {
+            '顶牌': false,
             '车流': false,
             '无人机': false,
             '河流': false,
@@ -378,18 +425,26 @@ export default function City() {
                 }, camera)
             },
         }
+        folder.add(settings, '顶牌').onChange(e => {
+            if (e) {
+                cSS2DObject2.forEach(item => {
+                    scene.add(item);
+                });
+            } else {
+                cSS2DObject2.forEach(item => {
+                    scene.remove(item);
+                });
+            }
+        });
         folder.add(settings, '车流').onChange(e => {
             if (e) {
                 if (carList.length === 0) {
                     createCarsBindTrace(scene, carList, testCarModels);
-                    showCar = true;
                 } else {
                     carList.forEach(item => scene.add(item));
-                    showCar = true;
                 }
             } else {
                 carList.forEach(item => scene.remove(item));
-                showCar = false;
             }
         })
         folder.add(settings, '无人机').onChange(e => {
@@ -518,6 +573,7 @@ export default function City() {
         raycaster.setFromCamera(mouse, camera)
         const intersects = raycaster.intersectObjects(scene.children);
         if (intersects.length > 0) {
+            console.log(intersects[0])
             trace.push(intersects[0].point)
         }
     }
@@ -842,7 +898,7 @@ export default function City() {
         if (mixer) {
             mixer.update(dt);
         }
-        if (showCar) {
+        if (settings['车流']) {
             carList.forEach(item => {
                 if (item.progress < 1 && !item.paused) {
                     const temp = dt * (item.speed * 1000 / 3600) / item.catmullRomCurve3Length;
@@ -854,6 +910,8 @@ export default function City() {
                     if (item.progress >= 1) {
                         item.progress = 1;
                         item.speed = (Math.floor(Math.random() * 60) + 60);
+                    } else if (item.progress - 0.0001 < 0) {
+                        item.progress = 0.0001;
                     }
                     let point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
                     
@@ -898,9 +956,14 @@ export default function City() {
             water.material.uniforms['time'].value += 1.0 / 60.0;
         }
         renderer?.render(scene, camera);
+        if (settings['顶牌']) {
+            labelRenderer?.render(scene, camera);
+        }
         rafId = requestAnimationFrame(render);
     }
     return (
-        <canvas id="three"></canvas>
+        <div id="parent">
+            <canvas id="three" style={{zIndex: 1}}></canvas>
+        </div>
     )
 }
