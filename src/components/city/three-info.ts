@@ -172,7 +172,7 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
     option.controls = option.controls || [] //控制器新的中心点位置(围绕词典旋转等)
     option.duration = option.duration || 1000 //飞行时间
     option.easing = option.easing || TWEEN.Easing.Linear.None;
-    TWEEN.removeAll();
+    // TWEEN.removeAll();
     const curPosition = camera.position
         , controlsTar = controls.target
         , tween = new TWEEN.Tween({
@@ -212,4 +212,69 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
     tween.start()
     TWEEN.add(tween)
     return tween
+}
+
+/**
+ * 利用Tweenjs实现物体平滑移动效果
+ *
+ * @export
+ * @param {*} option
+ * @param {THREE.PerspectiveCamera} camera
+ * @return {*} 
+ */
+ export function flyObj(obj: THREE.Object3D, option: any) {
+    option.position = option.position || [] //物体新的位置
+    option.duration = option.duration || 1000 //飞行时间
+    option.easing = option.easing || TWEEN.Easing.Linear.None;
+    TWEEN.removeAll();
+    const curPosition = obj.position
+        , tween = new TWEEN.Tween({
+            x1: curPosition.x, // 当前位置x
+            y1: curPosition.y, // 当前位置y
+            z1: curPosition.z, // 当前位置z
+        }).to({
+            x1: option.position[0], // 新的位置x
+            y1: option.position[1], // 新的位置y
+            z1: option.position[2], // 新的位置z
+        }, option.duration).easing(TWEEN.Easing.Linear.None) // TWEEN.Easing.Cubic.InOut //匀速
+    tween.onUpdate(() => {
+        obj.position.set(tween['_object'].x1, tween['_object'].y1, tween['_object'].z1)
+        if (option.update instanceof Function)
+            option.update(tween)
+    })
+    tween.onStart(() => {
+        if (option.start instanceof Function)
+            option.start()
+    })
+    tween.onComplete(() => {
+        if (option.done instanceof Function)
+            option.done()
+    })
+    tween.onStop(() => option.stop instanceof Function ? option.stop() : '')
+    tween.start()
+    TWEEN.add(tween)
+    return tween
+}
+
+/**
+ * 利用Tweenjs实现物体在一系列坐标间平滑移动效果
+ *
+ * @export
+ * @param {*} option
+ * @param {THREE.PerspectiveCamera} camera
+ * @return {*} 
+ */
+export function flyObjWithPositionList(obj: THREE.Object3D, positions: [number, number, number][], onDown?: Function) {
+    let len = positions.length;
+    let tween = flyObj(obj, {
+        duration: 10000,
+        position: positions[0],
+    });
+    tween.onComplete(() => {
+        if (len > 1) {
+            flyObjWithPositionList(obj, positions.slice(1), onDown);
+        } else {
+            onDown && onDown();
+        }
+    })
 }

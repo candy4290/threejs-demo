@@ -39,7 +39,7 @@ export default function (option = {}) {
         speed,
         renderOrder
     } = option;
-    const geometry = new THREE.CylinderGeometry(radius, radius, height, 32, 1, true);
+    const geometry = new THREE.CylinderGeometry(radius, radius, height, 32, 1, true); /* 圆柱缓冲几何体 */
     geometry.translate(0, height / 2, 0);
     const material = new THREE.ShaderMaterial({
         uniforms: {

@@ -95,6 +95,10 @@ gl_FragCoord内置变量是vec2类型，它表示WebGL在canvas画布上渲染�
 - gl_PointCoord  
 gl_PointCoord内置变量也是vec2类型，同样表示像素的坐标，但是与gl_FragCoord不同的是，gl_FragCoord是按照整个canvas算的x值从[0,宽度]，y值是从[0,高度]。而gl_PointCoord是在点渲染模式中生效的，而它的范围是对应小正方形面，同样是左上角[0,0]到右下角[1,1]。
 
+### glsl内置函数
+- mod(x,y)  
+原理x%y(即取余数)
+
 ### jsx标签注释
 ``` javascript
  {
