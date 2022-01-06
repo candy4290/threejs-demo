@@ -17,7 +17,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 let flyIndex = 0;
 /**
  * 智慧城市光影效果
- *
+ * 魔视主题色---#11A4A1、#1485A6、#00457D
  * @export
  * @return {*} 
  */
@@ -139,6 +139,7 @@ let raycaster: THREE.Raycaster;
 const mouse = new THREE.Vector2();
 let trace: THREE.Vector3[] = []; /* 轨迹点位 */
 const carList: any[] = [];
+let showCar = false; /* 显示车辆 */
 let testCarModels: any[] = [];
 
 export default function City() {
@@ -207,8 +208,6 @@ export default function City() {
         controls.target.set(2, 0, 0);
         loadCity();
         
-        // loadFlyingDrone();
-
         createPanel();
         
         // scene.add(new THREE.AxesHelper(1660))
@@ -309,7 +308,8 @@ export default function City() {
             mixer = new THREE.AnimationMixer( flymodel );
             mixer.clipAction( gltf.animations[ 0 ] ).play();
             scene.add(flymodel);
-            const pointLight = new THREE.PointLight('yellow', 10, 100);
+            /* -#11A4A1、#1485A6、#00457D */
+            const pointLight = new THREE.PointLight('#11A4A1', 10, 100);
             flymodel.add(pointLight)
             loop();
         });
@@ -333,6 +333,7 @@ export default function City() {
         const folder1 = gui.addFolder('视角');
         const folder2 = gui.addFolder('个人调试');
         settings = {
+            '车流': false,
             '无人机': false,
             '河流': false,
             '雷达扫描': true,
@@ -377,6 +378,20 @@ export default function City() {
                 }, camera)
             },
         }
+        folder.add(settings, '车流').onChange(e => {
+            if (e) {
+                if (carList.length === 0) {
+                    createCarsBindTrace(scene, carList, testCarModels);
+                    showCar = true;
+                } else {
+                    carList.forEach(item => scene.add(item));
+                    showCar = true;
+                }
+            } else {
+                carList.forEach(item => scene.remove(item));
+                showCar = false;
+            }
+        })
         folder.add(settings, '无人机').onChange(e => {
             if (e) {
                 if (!flymodel) {
@@ -781,7 +796,6 @@ export default function City() {
 
         const fbxLoader = new FBXLoader();
         fbxLoader.load('/fbxs/shanghai.FBX', fbx => {
-            console.log(fbx)
             fbx.traverse(child => {
                 if (cityArray.includes(child.name)) {
                     setCityMaterial(child); /* 建筑 */
@@ -828,39 +842,41 @@ export default function City() {
         if (mixer) {
             mixer.update(dt);
         }
-        carList.forEach(item => {
-            if (item.progress < 1 && !item.paused) {
-                const temp = dt * (item.speed * 1000 / 3600) / item.catmullRomCurve3Length;
-                const time = -performance.now() / 1000;
-                for (let i = 0; i < item.wheels.length; i++) { /* 转动车轮 */
-                    item.wheels[i].rotation.x = time * Math.PI;
-                }
-                item.progress += temp;
-                if (item.progress >= 1) {
-                    item.progress = 1;
-                    item.speed = (Math.floor(Math.random() * 60) + 60);
-                }
-                let point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
-                
-                const tangent = item.catmullRomCurve3.getTangentAt(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
-                const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
-
-                const point1 = item.catmullRomCurve3.getPointAt(item.progress - 0.0001);
-                if (point && point.x) {
-                    item.position.copy(point);
-                    if (item.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
-                        item.lookAt(point1); /* 转弯、掉头动作 */
-                        if (item.follow) {
-                            camera.position.copy(startPoint).setY(startPoint.y + 3);
-                            controls.target.copy(point);
+        if (showCar) {
+            carList.forEach(item => {
+                if (item.progress < 1 && !item.paused) {
+                    const temp = dt * (item.speed * 1000 / 3600) / item.catmullRomCurve3Length;
+                    const time = -performance.now() / 1000;
+                    for (let i = 0; i < item.wheels.length; i++) { /* 转动车轮 */
+                        item.wheels[i].rotation.x = time * Math.PI;
+                    }
+                    item.progress += temp;
+                    if (item.progress >= 1) {
+                        item.progress = 1;
+                        item.speed = (Math.floor(Math.random() * 60) + 60);
+                    }
+                    let point = item.catmullRomCurve3.getPointAt(item.progress); /* 也是向量切线的终点坐标 */
+                    
+                    const tangent = item.catmullRomCurve3.getTangentAt(item.progress - Math.floor(item.progress)).multiplyScalar(10); /* 单位向量切线 */
+                    const startPoint = new THREE.Vector3(point.x - tangent.x, point.y - tangent.y, point.z - tangent.z); /* 向量切线的起点坐标 */
+    
+                    const point1 = item.catmullRomCurve3.getPointAt(item.progress - 0.0001);
+                    if (point && point.x) {
+                        item.position.copy(point);
+                        if (item.progress < 1) { /* 此判断条件用来确保：车头保持原先的方向 */
+                            item.lookAt(point1); /* 转弯、掉头动作 */
+                            if (item.follow) {
+                                camera.position.copy(startPoint).setY(startPoint.y + 3);
+                                controls.target.copy(point);
+                            }
                         }
                     }
+                } else if (item.progress >= 1 && !item.paused) {
+                    item.progress = 0;
                 }
-            } else if (item.progress >= 1 && !item.paused) {
-                item.progress = 0;
-            }
-
-        });
+    
+            });
+        }
         if (texture) {
             texture.offset.x -= 0.01;
         }

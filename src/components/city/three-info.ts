@@ -101,7 +101,7 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
             carModel.getObjectByName('rim_rl').material = detailsMaterial;
             carModel.getObjectByName('trim').material = detailsMaterial;
             carModel.getObjectByName('glass').material = glassMaterial;
-            // carModel.scale.set(2,2,2)
+            // carModel.scale.set(4,4,4)
 
             // shadow
             const mesh = new THREE.Mesh(
