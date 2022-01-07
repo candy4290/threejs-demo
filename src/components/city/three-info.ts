@@ -167,12 +167,12 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
  * @param {THREE.PerspectiveCamera} camera
  * @return {*} 
  */
- export function flyTo2(controls: MapControls, option: any, camera: THREE.PerspectiveCamera) {
+ export function flyTo2(controls: MapControls, option: any, camera: THREE.PerspectiveCamera, group: TWEEN.Group, delay?: number) {
+    group.removeAll();
     option.position = option.position || [] //相机新的位置
     option.controls = option.controls || [] //控制器新的中心点位置(围绕词典旋转等)
     option.duration = option.duration || 1000 //飞行时间
     option.easing = option.easing || TWEEN.Easing.Linear.None;
-    // TWEEN.removeAll();
     const curPosition = camera.position
         , controlsTar = controls.target
         , tween = new TWEEN.Tween({
@@ -182,7 +182,7 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
             x2: controlsTar.x, // 控制当前的中心点x
             y2: controlsTar.y, // 控制当前的中心点y
             z2: controlsTar.z // 控制当前的中心点z
-        }).to({
+        }, group).to({
             x1: option.position[0], // 新的相机位置x
             y1: option.position[1], // 新的相机位置y
             z1: option.position[2], // 新的相机位置z
@@ -209,8 +209,8 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
             option.done()
     })
     tween.onStop(() => option.stop instanceof Function ? option.stop() : '')
+    delay && tween.delay(delay)
     tween.start()
-    TWEEN.add(tween)
     return tween
 }
 
@@ -223,10 +223,10 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
  * @return {*} 
  */
  export function flyObj(obj: THREE.Object3D, option: any) {
+    //  TWEEN.removeAll();
     option.position = option.position || [] //物体新的位置
     option.duration = option.duration || 1000 //飞行时间
     option.easing = option.easing || TWEEN.Easing.Linear.None;
-    TWEEN.removeAll();
     const curPosition = obj.position
         , tween = new TWEEN.Tween({
             x1: curPosition.x, // 当前位置x
@@ -252,8 +252,8 @@ export function createCarsBindTrace(scene: THREE.Scene, carList: any[], testCarM
     })
     tween.onStop(() => option.stop instanceof Function ? option.stop() : '')
     tween.start()
-    TWEEN.add(tween)
-    return tween
+    // TWEEN.add(tween)
+    return tween;
 }
 
 /**

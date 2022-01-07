@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { Water } from 'three/examples/jsm/objects/Water';
-import { createCarsBindTrace, createLightLine, flyObj, flyObjWithPositionList, forMaterial, surroundLineGeometry } from './three-info';
+import { createCarsBindTrace, createLightLine, flyObjWithPositionList, forMaterial, surroundLineGeometry } from './three-info';
 import Shader from './shader';
 import {
     Radar,
@@ -11,7 +11,7 @@ import {
     Fly
 } from './effect/index';
 import * as dat from 'dat.gui';
-import { flyTo2 } from "../car2/three-info";
+import { flyTo2 } from "./three-info";
 import TWEEN from '@tweenjs/tween.js'
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
@@ -25,6 +25,8 @@ let flyIndex = 0;
  * @export
  * @return {*} 
  */
+ const group = new TWEEN.Group(); /* fly的group */
+
 let labelRenderer: CSS2DRenderer;
 let cSS2DObject2: CSS2DObject[] = [];
 let new2dObj: {[key: string]: CSS2DObject} = {};
@@ -363,7 +365,7 @@ export default function City() {
                         flyTo2(controls, {
                             position: temp[0],
                             controls: temp[1]
-                        }, camera);
+                        }, camera, group);
                     }
                 }
             })
@@ -379,7 +381,6 @@ export default function City() {
 
     /* 添加2d顶牌 */
     function add2DLabel(point: THREE.Vector3, mesh: THREE.Mesh) {
-        console.log(mesh.uuid)
         if (new2dObj[mesh.uuid]) {
             scene.remove(new2dObj[mesh.uuid]);
             delete new2dObj[mesh.uuid];
@@ -390,7 +391,6 @@ export default function City() {
             return;
         }
         const createLabel = (item: {name: string, position: [number,number,number]}) => {
-            console.log('创建顶牌')
             const dingPaiDiv = document.createElement('div');
             dingPaiDiv.id = mesh.uuid;
             dingPaiDiv.className = 'box2';
@@ -427,6 +427,51 @@ export default function City() {
         const folder1 = gui.addFolder('视角');
         const folder2 = gui.addFolder('个人调试');
         settings = {
+            '开始巡逻': () => {
+                flyTo2(controls, {
+                    position: [1944,36,420],
+                    controls: [-379,4.68,351.86],
+                    duration:1000,
+                    done: () => {
+                        flyTo2(controls, {
+                            position: [1909,1241,434],
+                            controls: [-501,-3,363],
+                            duration:1000,
+                            done: () => {
+                                flyTo2(controls, {
+                                    position: [-259,1470,-1763],
+                                    controls: [-418,-3,511],
+                                    duration:1000,
+                                    done: () => {
+                                        flyTo2(controls, {
+                                            position: [-2137,547,240],
+                                            controls: [500,-5,567],
+                                            duration:1000,
+                                            done: () => {
+                                                flyTo2(controls, {
+                                                    position: [-1537,819,2361],
+                                                    controls: [257,-5,499],
+                                                    duration:1000,
+                                                    done: () => {
+                                                        flyTo2(controls, {
+                                                            position: [1200,700,121],
+                                                            controls: [2,0,0],
+                                                            duration:1000,
+                                                            done: () => {
+                                                                
+                                                            }
+                                                        }, camera, group, 1000)
+                                                    }
+                                                }, camera, group, 1000)
+                                            }
+                                        }, camera, group, 1000)
+                                    }
+                                }, camera, group, 1000)
+                            }
+                        }, camera, group, 1000)
+                    }
+                }, camera, group)
+            },
             '顶牌': false,
             '车流': false,
             '无人机': false,
@@ -470,9 +515,10 @@ export default function City() {
                             flyIndex++
                         }
                     }
-                }, camera)
+                }, camera, group)
             },
         }
+        folder.add(settings, '开始巡逻');
         folder.add(settings, '顶牌').onChange(e => {
             if (e) {
                 cSS2DObject2.forEach(item => {
@@ -593,7 +639,7 @@ export default function City() {
                     done: () => {
                        console.log('down')
                     }
-                }, camera)
+                }, camera, group);
             }
         });
         folder1.open();
@@ -909,7 +955,6 @@ export default function City() {
 
         const fbxLoader = new FBXLoader();
         fbxLoader.load('/fbxs/shanghai.FBX', fbx => {
-            console.log(fbx);
             fbx.traverse(child => {
                 if (cityArray.includes(child.name)) {
                     setCityMaterial(child); /* 建筑 */
@@ -951,6 +996,7 @@ export default function City() {
     }
 
     function render() {
+        group.update();
         TWEEN.update();
         const dt = clock.getDelta();
         if (mixer) {
