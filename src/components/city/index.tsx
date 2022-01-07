@@ -16,6 +16,7 @@ import TWEEN from '@tweenjs/tween.js'
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import './index.less';
+import PositionImg from '../../assets/images/3d/position.png';
 
 let flyIndex = 0;
 /**
@@ -26,6 +27,7 @@ let flyIndex = 0;
  */
 let labelRenderer: CSS2DRenderer;
 let cSS2DObject2: CSS2DObject[] = [];
+let new2dObj: {[key: string]: CSS2DObject} = {};
 
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
@@ -338,11 +340,59 @@ export default function City() {
         document.querySelector('#parent')?.appendChild(labelRenderer.domElement);
 
         const list = [
-            {name: '东方明珠', position: [-530.58, 408.97, 1347.14]},
-            {name: '世贸大厦', position: [-286.36, 296.73, -634.51]}
+            {name: '东方明珠', position: [-530.58, 408.97, 1347.14], target: [[-760.00,367.15,1907.78],[118.55,-1.73,-348.13]]},
+            {name: '世贸大厦', position: [-286.36, 296.73, -634.51], target: [[-246.55,497.09,-1330.34],[-478.58,-1.73,930.26]]}
         ]
-        const createLabel = (item: {name: string, position: [number,number,number]}) => {
+        const createLabel = (item: {name: string, position: [number,number,number], target: any}) => {
             const dingPaiDiv = document.createElement('div');
+            dingPaiDiv.className = 'box2';
+            dingPaiDiv.innerHTML = `
+                <div class="box2-block">
+                    <div class="box2-block-content">
+                        <p>${item.name}</p>
+                        <img src=${PositionImg} id="position-img" target="${JSON.stringify(item.target)}" />
+                    </div>
+                </div>
+            `;
+            // const img = dingPaiDiv.children[0].children[0].children[1];
+            dingPaiDiv.addEventListener('click', e => {
+                if ((e.target as HTMLElement).nodeName === 'IMG') {
+                    const target = (e.target as HTMLElement).getAttribute('target');
+                    if (target) {
+                        const temp = JSON.parse(target);
+                        flyTo2(controls, {
+                            position: temp[0],
+                            controls: temp[1]
+                        }, camera);
+                    }
+                }
+            })
+            const dingPaiLable = new CSS2DObject(dingPaiDiv);
+            dingPaiLable.position.set(...item.position);
+            cSS2DObject2.push(dingPaiLable);
+            scene.add(dingPaiLable);
+        }
+        list.forEach((item: any) => {
+            createLabel(item)
+        });
+    }
+
+    /* 添加2d顶牌 */
+    function add2DLabel(point: THREE.Vector3, mesh: THREE.Mesh) {
+        console.log(mesh.uuid)
+        if (new2dObj[mesh.uuid]) {
+            scene.remove(new2dObj[mesh.uuid]);
+            delete new2dObj[mesh.uuid];
+            const temp = document.getElementById(mesh.uuid);
+            if (temp) {
+                temp.remove()
+            }
+            return;
+        }
+        const createLabel = (item: {name: string, position: [number,number,number]}) => {
+            console.log('创建顶牌')
+            const dingPaiDiv = document.createElement('div');
+            dingPaiDiv.id = mesh.uuid;
             dingPaiDiv.className = 'box2';
             dingPaiDiv.innerHTML = `
                 <div class="box2-block">
@@ -352,13 +402,11 @@ export default function City() {
                 </div>
             `;
             const dingPaiLable = new CSS2DObject(dingPaiDiv);
-            dingPaiLable.position.set(...item.position);
-            cSS2DObject2.push(dingPaiLable);
+            dingPaiLable.position.set(item.position[0], item.position[1], item.position[2]);
+            new2dObj[mesh.uuid] = dingPaiLable;
             scene.add(dingPaiLable);
         }
-        list.forEach((item: any) => {
-            createLabel(item)
-        });
+        createLabel({name: '不知名建筑', position: [point.x, point.y, point.z]});
     }
 
     function onWindowResize() {
@@ -430,10 +478,16 @@ export default function City() {
                 cSS2DObject2.forEach(item => {
                     scene.add(item);
                 });
+                Object.keys(new2dObj).forEach(key => {
+                    scene.add(new2dObj[key]);
+                })
             } else {
                 cSS2DObject2.forEach(item => {
                     scene.remove(item);
                 });
+                Object.keys(new2dObj).forEach(key => {
+                    scene.remove(new2dObj[key]);
+                })
             }
         });
         folder.add(settings, '车流').onChange(e => {
@@ -574,6 +628,9 @@ export default function City() {
         const intersects = raycaster.intersectObjects(scene.children);
         if (intersects.length > 0) {
             console.log(intersects[0])
+            if (intersects[0].object.name === 'CITY_UNTRIANGULATED') {
+                add2DLabel(intersects[0].point, intersects[0].object as any)
+            }
             trace.push(intersects[0].point)
         }
     }
@@ -852,6 +909,7 @@ export default function City() {
 
         const fbxLoader = new FBXLoader();
         fbxLoader.load('/fbxs/shanghai.FBX', fbx => {
+            console.log(fbx);
             fbx.traverse(child => {
                 if (cityArray.includes(child.name)) {
                     setCityMaterial(child); /* 建筑 */
