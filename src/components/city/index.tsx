@@ -220,6 +220,7 @@ export default function City() {
         controls.target.set(2, 0, 0);
         loadCity();
         load2DBoard();
+        addVideo();
         
         createPanel();
         
@@ -326,6 +327,23 @@ export default function City() {
         });
     }
 
+    /* 添加视频 */
+    function addVideo() {
+        const video = document.getElementById('video') as HTMLVideoElement;
+        document.addEventListener('click', () => {
+            video.play();
+        });
+        const texture = new THREE.VideoTexture(video);
+        const gemo = new THREE.PlaneGeometry(53.90,98.77);
+        const material = new THREE.MeshLambertMaterial({
+            map: texture, color: 0xffffff
+        });
+        const mesh = new THREE.Mesh(gemo, material);
+        mesh.position.set(-1075.93,68.8, 1159);
+        mesh.rotateY(0.35 + Math.PI);
+        scene.add(mesh);
+    }
+
     function load2DBoard() {
         /* 精灵材质-始终面向摄像机 */
         // const map = new THREE.TextureLoader().load( "/textures/dt.png" );
@@ -343,7 +361,8 @@ export default function City() {
 
         const list = [
             {name: '东方明珠', position: [-530.58, 408.97, 1347.14], target: [[-760.00,367.15,1907.78],[118.55,-1.73,-348.13]]},
-            {name: '世贸大厦', position: [-286.36, 296.73, -634.51], target: [[-246.55,497.09,-1330.34],[-478.58,-1.73,930.26]]}
+            {name: '世贸大厦', position: [-286.36, 296.73, -634.51], target: [[-246.55,497.09,-1330.34],[-478.58,-1.73,930.26]]},
+            {name: '虚位以待', position: [-1089.46, 138.08, 1164.64], target: [[-1239.40,54.32,664.66],[-935.71,-1.27,1351.23]]},
         ]
         const createLabel = (item: {name: string, position: [number,number,number], target: any}) => {
             const dingPaiDiv = document.createElement('div');
@@ -483,6 +502,10 @@ export default function City() {
             '光墙': true,
             '波纹扩散': true,
             '横扫光线': true,
+            'x': -1074.93,
+            'y': 71.12,
+            'z': 1159.27,
+            'rotate': 0,
             '开启射线': false,
             '打印点位': () => {
                 console.log(trace);
@@ -637,7 +660,20 @@ export default function City() {
             }
         });
         folder1.open();
-
+        // folder2.add(settings, 'x', -3000, 3000,0.01).onChange(e => {
+        //     mesh.position.setX(e);
+        // })
+        // folder2.add(settings, 'y', -3000, 3000,0.01).onChange(e => {
+        //     mesh.position.setY(e);
+            
+        // })
+        // folder2.add(settings, 'z', -3000, 3000,0.01).onChange(e => {
+        //     mesh.position.setZ(e);
+            
+        // })
+        // folder2.add(settings, 'rotate', -Math.PI, Math.PI,0.01).onChange(e => {
+        //     mesh.rotation.y = e;
+        // })
         folder2.add(settings, '开启射线').onChange(e => {
             if (e) {
                 window.addEventListener('mousemove', onMouseMove, false);
@@ -1065,6 +1101,10 @@ export default function City() {
     return (
         <div id="parent">
             <canvas id="three" style={{zIndex: 1}}></canvas>
+            <video id="video" loop crossOrigin="anonymous" style={{display: 'none'}}>
+                {/* <source src="textures/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' /> */}
+                <source src="textures/motovis.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' />
+		    </video>
         </div>
     )
 }
