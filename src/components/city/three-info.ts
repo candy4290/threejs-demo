@@ -4,6 +4,7 @@ import { MapControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import TWEEN from '@tweenjs/tween.js'
+import SnowPng from '../../assets/images/3d/snow.png';
 
 export function forMaterial(materials, callback) {
     if (!callback || !materials) return false;
@@ -48,13 +49,13 @@ export function createLightLine(list: number[][], scene: THREE.Scene, path = '/r
     const res = getLineGeo(list)
 
     //管道体
-    const tubeGeometry = new THREE.TubeGeometry(res.curve, 1000, .5, 30)
+    const tubeGeometry = new THREE.TubeGeometry(res.curve, 1000, 1, 30)
     const texture = new THREE.TextureLoader().load(path)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
-    texture.repeat.set(1, 1);
-    const tubeMesh = new THREE.Mesh(tubeGeometry, new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true }))
+    texture.repeat.set(6, 1);
+    const tubeMesh = new THREE.Mesh(tubeGeometry, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true }))
     texture.needsUpdate = true
-    tubeMesh.scale.set(1,1,1)
+    tubeMesh.position.setY(1)
     scene.add(tubeMesh)
     return texture;
 }
@@ -277,4 +278,61 @@ export function flyObjWithPositionList(obj: THREE.Object3D, positions: [number, 
             onDown && onDown();
         }
     })
+}
+
+function updateGeomData(positions: number[], speeds: number[], range: number, isUpdate = false) {
+    for (let i = 0; i < 100000; i++) {
+        if (isUpdate) {
+            positions[i*3+0] = positions[i*3+0] - (speeds[i*3+0]);
+            positions[i*3+1] = positions[i*3+1] - (speeds[i*3+1]);
+            positions[i*3+2] = positions[i*3+2] - (speeds[i*3+2]);
+
+            // 边界检查
+            if (positions[i*3+0] <= -range/2 || positions[i*3+0] >= range/2) positions[i*3+0] = positions[i*3+0] * -1;
+            if (positions[i*3+1] <= 18) positions[i*3+1] = range/2 + 18;
+            if (positions[i*3+2] <= -range/2 || positions[i*3+2] >= range/2) speeds[i*3+2] = speeds[i*3+2] * -1;
+        } else {
+            positions[i*3+0] = Math.random() * range - range/2;
+            positions[i*3+1] = Math.random() * range/2 + 18;
+            positions[i*3+2] = Math.random() * range - range/2;
+
+            speeds[i*3+0] = (Math.random() - 0.5) / 3;
+            speeds[i*3+1] = 0.1 + Math.random() / 5;
+            speeds[i*3+2] = (Math.random() - 0.5) / 3;
+        }
+    }
+}
+
+/* 添加雪花效果 */
+export function addSnow(scene: THREE.Scene, fn) {
+    const range = 2000; /* 雪花出现范围 */
+    new THREE.TextureLoader().load(SnowPng, texture => {
+        const material = new THREE.PointsMaterial({
+            size: 2,
+            map: texture,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending, // 融合模式
+        });
+        if (material.map) {
+            material.map.repeat = new THREE.Vector2(1,1);
+        }
+        let positions: any = [];
+        let speeds: any = [];
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(20000 * 3), 3));
+        geom.setAttribute('speed', new THREE.BufferAttribute(new Float32Array(20000 * 3), 3));
+        positions = geom.attributes.position.array;
+        speeds = geom.attributes.speed.array;
+        updateGeomData(positions, speeds, range);
+        const points = new THREE.Points(geom, material);
+        scene.add(points);
+
+        const animate = () => {
+            updateGeomData(positions, speeds, range, true);
+            geom.attributes.position.needsUpdate = true;
+            geom.attributes.speed.needsUpdate = true;
+        }
+        fn(points, animate);
+    });
 }

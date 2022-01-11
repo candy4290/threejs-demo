@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import { Water } from 'three/examples/jsm/objects/Water';
-import { createCarsBindTrace, createLightLine, flyObjWithPositionList, forMaterial, surroundLineGeometry } from './three-info';
+import { addSnow, createCarsBindTrace, createLightLine, flyObjWithPositionList, forMaterial, surroundLineGeometry } from './three-info';
 import Shader from './shader';
 import {
     Radar,
@@ -18,14 +18,15 @@ import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRe
 import './index.less';
 import PositionImg from '../../assets/images/3d/position.png';
 
-let flyIndex = 0;
 /**
  * 智慧城市光影效果
  * 魔视主题色---#11A4A1、#1485A6、#00457D
  * @export
  * @return {*} 
  */
- const group = new TWEEN.Group(); /* fly的group */
+const group = new TWEEN.Group(); /* fly的group */
+
+let snowInfo; 
 
 let labelRenderer: CSS2DRenderer;
 let cSS2DObject2: CSS2DObject[] = [];
@@ -154,6 +155,7 @@ let testCarModels: any[] = [];
 export default function City() {
 
     useEffect(() => {
+        // document.body.style.cursor = "url('https://raw.githubusercontent.com/chenglou/react-motion/master/demos/demo8-draggable-list/cursor.png') 39 39, auto"
         init();
         return () => {
             gui.destroy();
@@ -223,84 +225,82 @@ export default function City() {
         
         // scene.add(new THREE.AxesHelper(1660))
         /* 亮的轨迹线条 */
-        // texture = createLightLine([
-        //     {
-        //         "x": 802.3299904494879,
-        //         "y": 19.068050175905103,
-        //         "z": 592.01164608935
-        //     },
-        //     {
-        //         "x": 762.3812541386974,
-        //         "y": 19.068050175905103,
-        //         "z": 588.6219318478661
-        //     },
-        //     {
-        //         "x": 212.6744889891521,
-        //         "y": 19.068050175905135,
-        //         "z": 442.46940951320863
-        //     },
-        //     {
-        //         "x": -73.43457228885484,
-        //         "y": 19.068050175905142,
-        //         "z": 410.78540672854035
-        //     },
-        //     {
-        //         "x": -217.3569209044227,
-        //         "y": 19.068050175905142,
-        //         "z": 403.8402612615073
-        //     },
-        //     {
-        //         "x": -293.4935704052756,
-        //         "y": 19.079523980617438,
-        //         "z": 403.90291874080845
-        //     },
-        //     {
-        //         "x": -336.60063378316784,
-        //         "y": 19.079523980617495,
-        //         "z": 406.3164539934255
-        //     },
-        //     {
-        //         "x": -401.95896358305777,
-        //         "y": 24.999999999999954,
-        //         "z": 403.287424706611
-        //     },
-        //     {
-        //         "x": -619.8293525260625,
-        //         "y": 25.000000000000018,
-        //         "z": 380.2697164886164
-        //     },
-        //     {
-        //         "x": -823.6070186623097,
-        //         "y": 24.999999999999964,
-        //         "z": 362.46967760421717
-        //     },
-        //     {
-        //         "x": -869.7286494702976,
-        //         "y": 24.999999999999964,
-        //         "z": 360.4253454753446
-        //     },
-        //     {
-        //         "x": -905.9031173189951,
-        //         "y": 24.999999999999908,
-        //         "z": 368.9510160542171
-        //     },
-        //     {
-        //         "x": -942.5975268080412,
-        //         "y": 24.99999999999996,
-        //         "z": 372.49738076684383
-        //     },
-        //     {
-        //         "x": -1070.3638281944845,
-        //         "y": 19.068050175905153,
-        //         "z": 360.62147159221206
-        //     }
-        // ].map(item => [item.x, item.y, item.z]), scene);
+        texture = createLightLine([
+            {
+                "x": 802.3299904494879,
+                "y": 19.068050175905103,
+                "z": 592.01164608935
+            },
+            {
+                "x": 762.3812541386974,
+                "y": 19.068050175905103,
+                "z": 588.6219318478661
+            },
+            {
+                "x": 212.6744889891521,
+                "y": 19.068050175905135,
+                "z": 442.46940951320863
+            },
+            {
+                "x": -73.43457228885484,
+                "y": 19.068050175905142,
+                "z": 410.78540672854035
+            },
+            {
+                "x": -217.3569209044227,
+                "y": 19.068050175905142,
+                "z": 403.8402612615073
+            },
+            {
+                "x": -293.4935704052756,
+                "y": 19.079523980617438,
+                "z": 403.90291874080845
+            },
+            {
+                "x": -336.60063378316784,
+                "y": 19.079523980617495,
+                "z": 406.3164539934255
+            },
+            {
+                "x": -401.95896358305777,
+                "y": 24.999999999999954,
+                "z": 403.287424706611
+            },
+            {
+                "x": -619.8293525260625,
+                "y": 25.000000000000018,
+                "z": 380.2697164886164
+            },
+            {
+                "x": -823.6070186623097,
+                "y": 24.999999999999964,
+                "z": 362.46967760421717
+            },
+            {
+                "x": -869.7286494702976,
+                "y": 24.999999999999964,
+                "z": 360.4253454753446
+            },
+            {
+                "x": -905.9031173189951,
+                "y": 24.999999999999908,
+                "z": 368.9510160542171
+            },
+            {
+                "x": -942.5975268080412,
+                "y": 24.99999999999996,
+                "z": 372.49738076684383
+            },
+            {
+                "x": -1070.3638281944845,
+                "y": 19.068050175905153,
+                "z": 360.62147159221206
+            }
+        ].map(item => [item.x, item.y, item.z]), scene);
 
         raycaster = new THREE.Raycaster();
 
         window.addEventListener('resize', onWindowResize);
-
-        // createCarsBindTrace(scene, carList, testCarModels);
 
         render();
     }
@@ -472,6 +472,7 @@ export default function City() {
                     }
                 }, camera, group)
             },
+            '下雪': false,
             '顶牌': false,
             '车流': false,
             '无人机': false,
@@ -495,30 +496,23 @@ export default function City() {
                 console.log([[t.x, t.y, t.z], [t2.x, t2.y, t2.z]])
             },
             '相机跟随': '不跟随',
-            '前往下一个巡逻点': () => {
-                const list = [
-                    [[104.45594331446466,11.108265937132753,19.40112869264901], [155.19527513615836,6.512210056323601e-17,-123.40401977071092]],
-                    [[534.3,5.6,-6.8], [400, 3.2, -49.6]],
-                    [[81.5,11.4,-227.7], [74.9,1.09, -168.81]],
-                    [[-591.98, 15.44,200.02], [-495.06, 1.105, 146.67]],
-                    [[-13.27,23.86,-76.77], [44.93,9.27,-85.74]],
-                    [[200,200,200], [2,0,0]]
-                ];
-                flyTo2(controls, {
-                    position: list[flyIndex][0],
-                    controls: list[flyIndex][1],
-                    duration:1000,
-                    done: () => {
-                        if (flyIndex === list.length - 1) {
-                            flyIndex = 0;
-                        } else {
-                            flyIndex++
-                        }
-                    }
-                }, camera, group)
-            },
         }
         folder.add(settings, '开始巡逻');
+        folder.add(settings, '下雪').onChange(e => {
+            if (e) {
+                if (snowInfo) {
+                    scene.add(snowInfo.points);
+                } else {
+                    addSnow(scene, (points, animate) => {
+                        snowInfo = {
+                            points,animate
+                        }
+                    });
+                }
+            } else {
+                scene.remove(snowInfo.points);
+            }
+        });
         folder.add(settings, '顶牌').onChange(e => {
             if (e) {
                 cSS2DObject2.forEach(item => {
@@ -996,6 +990,7 @@ export default function City() {
     }
 
     function render() {
+        rafId = requestAnimationFrame(render);
         group.update();
         TWEEN.update();
         const dt = clock.getDelta();
@@ -1040,7 +1035,7 @@ export default function City() {
             });
         }
         if (texture) {
-            texture.offset.x -= 0.01;
+            texture.offset.x -= 0.02;
         }
         if (destory && rafId) {
             cancelAnimationFrame(rafId);
@@ -1055,6 +1050,9 @@ export default function City() {
                 }
             }
         }
+        if (settings['下雪'] && snowInfo) {
+            snowInfo.animate();
+        }
         controls?.update();
         if (water) {
             water.material.uniforms['time'].value += 1.0 / 60.0;
@@ -1063,7 +1061,6 @@ export default function City() {
         if (settings['顶牌']) {
             labelRenderer?.render(scene, camera);
         }
-        rafId = requestAnimationFrame(render);
     }
     return (
         <div id="parent">
