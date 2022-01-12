@@ -9,7 +9,8 @@ import {
     Radar,
     Wall,
     Fly,
-    WallBox
+    WallBox,
+    Shield
 } from './effect';
 import * as dat from 'dat.gui';
 import { flyTo2 } from "./three-info";
@@ -46,6 +47,7 @@ let rafId;
 let water: Water;
 let gui: dat.GUI;
 let settings: any = {};
+let shield: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let wallBox: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let radar: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let wall: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
@@ -80,6 +82,16 @@ const StartTime = {
 };
 let surroundLineMaterial: THREE.ShaderMaterial;
 
+const shieldData = [{
+    radius: 50,
+    widthSegments: 50,
+    heightSegments: 50,
+    // #11A4A1、#1485A6、#00457D
+    color: '#0099FF',
+    x:-71.98,
+    y:20,
+    z:812.76
+}];
 const wallBoxData = [{
     positions: [[327.93,18.61,655.42],[354.63,18.61,492.90],[484.55,18.61,524.59],[449.01,18.61,686.09],[327.93,18.61,655.42]],
     height: 50,
@@ -506,6 +518,7 @@ export default function City() {
             '车流': false,
             '无人机': false,
             '河流': false,
+            '护盾': true,
             '电子围栏': true,
             '雷达扫描': true,
             '建筑扫光': true,
@@ -589,6 +602,17 @@ export default function City() {
             }
         })
         folder.open();
+        folder.add(settings, '护盾').onChange(e => {
+            if (e) {
+                shield.forEach(item => {
+                    scene.add(item);
+                })
+            } else {
+                shield.forEach(item => {
+                    scene.remove(item);
+                })
+            }
+        })
         folder.add(settings, '电子围栏').onChange(e => {
             if (e) {
                 wallBox.forEach(item => {
@@ -1020,6 +1044,14 @@ export default function City() {
             // setRiver();
             const t$ = setTimeout(() => {
                 isStart = true;
+                // 雷电护盾
+                shieldData.forEach((data) => {
+                    const mesh = Shield(data);
+                    mesh.material.uniforms.time = time;
+                    mesh.renderOrder = 1;
+                    shield.push(mesh);
+                    scene.add(mesh);
+                })
                 // 加载围栏墙
                 wallBoxData.forEach((data) => {
                     const mesh = WallBox(data);
