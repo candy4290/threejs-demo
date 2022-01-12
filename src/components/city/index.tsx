@@ -8,8 +8,9 @@ import Shader from './shader';
 import {
     Radar,
     Wall,
-    Fly
-} from './effect/index';
+    Fly,
+    WallBox
+} from './effect';
 import * as dat from 'dat.gui';
 import { flyTo2 } from "./three-info";
 import TWEEN from '@tweenjs/tween.js'
@@ -45,6 +46,7 @@ let rafId;
 let water: Water;
 let gui: dat.GUI;
 let settings: any = {};
+let wallBox: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let radar: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let wall: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
 let fly: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial>[] = [];
@@ -78,6 +80,14 @@ const StartTime = {
 };
 let surroundLineMaterial: THREE.ShaderMaterial;
 
+const wallBoxData = [{
+    positions: [[327.93,18.61,655.42],[354.63,18.61,492.90],[484.55,18.61,524.59],[449.01,18.61,686.09],[327.93,18.61,655.42]],
+    height: 50,
+    color: '#0099FF',
+    opacity: 1,
+    num: 5,
+    hiz: 0.15,
+}]
 const radarData = [{
     position: {
         x: 666,
@@ -496,6 +506,7 @@ export default function City() {
             '车流': false,
             '无人机': false,
             '河流': false,
+            '电子围栏': true,
             '雷达扫描': true,
             '建筑扫光': true,
             '投递飞线': true,
@@ -578,6 +589,17 @@ export default function City() {
             }
         })
         folder.open();
+        folder.add(settings, '电子围栏').onChange(e => {
+            if (e) {
+                wallBox.forEach(item => {
+                    scene.add(item);
+                })
+            } else {
+                wallBox.forEach(item => {
+                    scene.remove(item);
+                })
+            }
+        })
         folder.add(settings, '河流').onChange(e => {
             if (e) {
                 if (!water) {
@@ -998,6 +1020,15 @@ export default function City() {
             // setRiver();
             const t$ = setTimeout(() => {
                 isStart = true;
+                // 加载围栏墙
+                wallBoxData.forEach((data) => {
+                    const mesh = WallBox(data);
+                    mesh.material.uniforms.time = time;
+                    mesh.position.setY(data.positions[0][1]);
+                    mesh.renderOrder = 1;
+                    wallBox.push(mesh);
+                    scene.add(mesh);
+                });
                 // 加载扫描效果
                 radarData.forEach((data) => {
                     const mesh = Radar(data);
