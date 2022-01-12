@@ -26,7 +26,7 @@ TubeGeometry如何才能包含所有生成curve的点？？？？
  - 9.小地图展示---renderer开启剪裁检测，使用一个额外的camera
  - 10.欧拉角
  - 11.摄像机从一个点飞到另外一个点的效果制作（flyTo）:利用tween.js
- - 12.css3dobject,需要WebGLRenderer背景透明，且不可以设置clearColor
+ - 12.css3dobject,需要WebGLRenderer背景透明，且不可以设置clearColor;controls中的参数，需要设置为CSS3DRenderer示例的domElement；css3dobject会永远覆盖在wegglrenderer渲染场景内容的上层；
 
 可以做的思路：  
 - 使用天空盒（6张图）和等矩形贴图以及HDR贴图(RGBELoader)可以制作3d背景
