@@ -10,6 +10,7 @@ let controls: MapControls;
 let t = {
     value: 0
 }
+let ttt: THREE.Texture;
 export default function Shield() {
     useEffect(() => {
         init();
@@ -19,7 +20,7 @@ export default function Shield() {
         const canvas = document.querySelector('#three') as HTMLCanvasElement;
 
         scene = new THREE.Scene();
-        
+
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
         camera.position.set(20, 20, 20);
         scene.add(camera);
@@ -47,38 +48,53 @@ export default function Shield() {
 
         scene.add(new THREE.AxesHelper(10));
 
-        const geometry = new THREE.SphereBufferGeometry(10, 50, 50, 0, Math.PI * 2);
-        const material = getMaterial();
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
+        const material2 = getMater2();
+        // const geometry = new THREE.SphereBufferGeometry(1, 50, 50, 0, Math.PI * 2);
+        // const material = getMaterial();
+        // const mesh = new THREE.Mesh(geometry, material);
+        // // scene.add(mesh);
+
+        const geometry1 = new THREE.SphereBufferGeometry(10, 500, 500, 0, Math.PI * 2, -Math.PI/2);
+        ttt = new THREE.TextureLoader().load('/textures/six-side.png', function(t) {
+        });
+        ttt.wrapS = ttt.wrapT = THREE.RepeatWrapping;
+        ttt.needsUpdate = true;
+        material2.uniforms.textureMap.value=ttt;
+        const mesh2 = new THREE.Mesh(geometry1, material2);
+        scene.add(mesh2);
 
         const animate = () => {
             requestAnimationFrame(animate);
             t.value += 0.02
+            if (ttt) {
+                ttt.offset.x -= 0.2
+            }
             renderer.render(scene, camera);
         };
 
         animate();
+
+
 
     }
 
     function getMaterial() {
         var ElectricShield = {
             uniforms: {
-            time: t,
-            color: {
-                value: new THREE.Color("#9999FF")
-            },
-            opacity: {
-                value: 1
-            }
+                time: t,
+                color: {
+                    value: new THREE.Color("#9999FF")
+                },
+                opacity: {
+                    value: 1
+                }
             },
             vertexShaderSource: "\n  precision lowp float;\n  precision lowp int;\n  "
-            .concat(
-                THREE.ShaderChunk.fog_pars_vertex,
-                "\n  varying vec2 vUv;\n  void main() {\n    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n    vUv = uv;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n    "
-            )
-            .concat(THREE.ShaderChunk.fog_vertex, "\n  }\n"),
+                .concat(
+                    THREE.ShaderChunk.fog_pars_vertex,
+                    "\n  varying vec2 vUv;\n  void main() {\n    vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );\n    vUv = uv;\n    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n    "
+                )
+                .concat(THREE.ShaderChunk.fog_vertex, "\n  }\n"),
             fragmentShaderSource: `
             #if __VERSION__ == 100
              #extension GL_OES_standard_derivatives : enable
@@ -155,6 +171,60 @@ export default function Shield() {
             depthTest: !0,
             side: THREE.DoubleSide,
             transparent: !0
+        });
+        return material;
+    }
+
+    function getMater2() {
+        let material = new THREE.ShaderMaterial({
+            uniforms: {
+                scale: { value: -1.0 },
+                bias: { value: 1.0 },
+                power: { value: 3.3 },
+                glowColor: { value: new THREE.Color(0x00ffff) },
+                textureMap: {
+                    value: undefined
+                },
+                repeat: {
+                    value: new THREE.Vector2(30.0, 15.0)
+                },
+                time: t
+            },
+            vertexShader: `
+            varying vec3 vNormal;
+                varying vec3 vPositionNormal;
+                varying vec2 vUv;
+                void main() 
+                {
+                    vUv = uv;
+                    vNormal = normalize( normalMatrix * normal ); // 转换到视图空间
+                    vPositionNormal = normalize(( modelViewMatrix * vec4(position, 1.0) ).xyz);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 glowColor;
+                uniform float bias;
+                uniform float power;
+                uniform float scale;
+                varying vec3 vNormal;
+                varying vec3 vPositionNormal;
+                uniform sampler2D textureMap;
+                uniform vec2 repeat;
+                varying vec2 vUv;
+                uniform float time;
+                void main() 
+                {
+                    float a = pow( bias + scale * abs(dot(vNormal, vPositionNormal)), power );
+                    //*(vec2(1.0,time))
+                    vec4 mapColor=texture2D( textureMap, vUv*repeat);
+                    gl_FragColor = vec4( glowColor*mapColor.rgb, a );
+                }
+            `,
+            // blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            // side: THREE.DoubleSide,
+            transparent: true
         });
         return material;
     }
