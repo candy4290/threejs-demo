@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as THREE from 'three';
 import { MapControls } from "three/examples/jsm/controls/OrbitControls";
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
@@ -19,6 +19,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer";
 import './index.less';
 import PositionImg from '../../assets/images/3d/position.png';
+import BackImg from '../../assets/images/3d/backward.png';
+import _ from "lodash";
 
 /**
  * 智慧城市光影效果
@@ -27,6 +29,8 @@ import PositionImg from '../../assets/images/3d/position.png';
  * @return {*} 
  */
 const group = new TWEEN.Group(); /* fly的group */
+
+let secondMesh: THREE.Mesh;
 
 let snowInfo; 
 
@@ -99,7 +103,16 @@ const wallBoxData = [{
     opacity: 1,
     num: 5,
     hiz: 0.15,
-}]
+}, 
+// {
+//     positions: [[-2905.02,18.61,-1508.18],[201.98,18.61,-1009.29],[312.33,18.61,-916.01],[1110.08,18.61,-825.54],[1108.30,18.61,2027.35],[-2905.34,18.61,2023.71],[-2905.02,18.61,-1508.18]],
+//     height: 10,
+//     color: '#0099FF',
+//     opacity: 1,
+//     num: 5,
+//     hiz: 0.15,
+// }
+]
 const radarData = [{
     position: {
         x: 666,
@@ -174,8 +187,10 @@ let trace: THREE.Vector3[] = []; /* 轨迹点位 */
 const carList: any[] = [];
 let testCarModels: any[] = [];
 
-export default function City() {
+let prePosition: any; /* 相机控制器位置 */
 
+export default function City() {
+    const [,setR] = useState(0);
     useEffect(() => {
         // document.body.style.cursor = "url('https://raw.githubusercontent.com/chenglou/react-motion/master/demos/demo8-draggable-list/cursor.png') 39 39, auto"
         init();
@@ -218,11 +233,14 @@ export default function City() {
 
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
         camera.position.set(1200, 700, 121);
+        camera.userData.allShow = true;
         scene.add(camera);
 
         const light = new THREE.AmbientLight(0xadadad); /* 环境光 */
+        light.userData.allShow = true;
         scene.add(light);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); /* 平行光源 */
+        directionalLight.userData.allShow = true;
         directionalLight.position.set(100, 100, 0);
         scene.add(directionalLight);
 
@@ -240,6 +258,7 @@ export default function City() {
         controls.maxPolarAngle = Math.PI / 2.02;
         controls.screenSpacePanning = false;
         controls.target.set(2, 0, 0);
+
         loadCity();
         load2DBoard();
         addVideo();
@@ -385,6 +404,7 @@ export default function City() {
             {name: '东方明珠', position: [-530.58, 408.97, 1347.14], target: [[-760.00,367.15,1907.78],[118.55,-1.73,-348.13]]},
             {name: '世贸大厦', position: [-286.36, 296.73, -634.51], target: [[-246.55,497.09,-1330.34],[-478.58,-1.73,930.26]]},
             {name: '虚位以待', position: [-1089.46, 138.08, 1164.64], target: [[-1239.40,54.32,664.66],[-935.71,-1.27,1351.23]]},
+            {name: '住宅出售', position: [-1255.39,80.33,46.98], target: [[24.58, 3.38, -18.87],[-0.1,2.75,3.56]]}
         ]
         const createLabel = (item: {name: string, position: [number,number,number], target: any}) => {
             const dingPaiDiv = document.createElement('div');
@@ -393,21 +413,23 @@ export default function City() {
                 <div class="box2-block">
                     <div class="box2-block-content">
                         <p>${item.name}</p>
-                        <img src=${PositionImg} id="position-img" target="${JSON.stringify(item.target)}" />
+                        <img src=${PositionImg} id="${item.name !== '住宅出售' ? 'position-img' : 'detail-img'}" target="${JSON.stringify(item.target)}" />
                     </div>
                 </div>
             `;
             // const img = dingPaiDiv.children[0].children[0].children[1];
             dingPaiDiv.addEventListener('click', e => {
-                if ((e.target as HTMLElement).nodeName === 'IMG') {
-                    const target = (e.target as HTMLElement).getAttribute('target');
-                    if (target) {
-                        const temp = JSON.parse(target);
-                        flyTo2(controls, {
-                            position: temp[0],
-                            controls: temp[1]
-                        }, camera, group);
-                    }
+                const target = (e.target as HTMLElement).getAttribute('target');
+                if (target) {
+                    const temp = JSON.parse(target);
+                    flyTo2(controls, {
+                        position: temp[0],
+                        controls: temp[1]
+                    }, camera, group);
+                }
+                if ((e.target as HTMLElement).id === 'position-img') {
+                } else if ((e.target as HTMLElement).id === 'detail-img') {
+                    switchScene();
                 }
             })
             const dingPaiLable = new CSS2DObject(dingPaiDiv);
@@ -418,6 +440,53 @@ export default function City() {
         list.forEach((item: any) => {
             createLabel(item)
         });
+    }
+
+    function switchScene() {
+        if (prePosition) {
+            const t1 = _.cloneDeep(prePosition.camera);
+            const t2 =_.cloneDeep(prePosition.control);
+            flyTo2(controls, {
+                position: [t1.x,t1.y,t1.z],
+                controls: [t2.x,t2.y,t2.z]
+            }, camera, group);
+            scene.children.forEach(e=>{
+                if (e.userData.isSecond) {
+                    e.visible = false;
+                } else {
+                    e.visible = true;
+                }
+            });
+            // camera.position.set(prePosition.camera.x, prePosition.camera.y, prePosition.camera.z);
+            // controls.target.set(prePosition.control.x, prePosition.control.y, prePosition.control.z);
+            prePosition = null;
+        } else {
+            const t1 = _.cloneDeep(camera.position);
+            const t2 =_.cloneDeep(controls.target);
+            prePosition = {
+                camera: t1,
+                control: t2
+            };
+            // camera.position.set(24.58, 3.38, -18.87);
+            // controls.target.set(-0.1,2.75,3.56);
+            scene.children.forEach(e=>{
+                if (!e.userData.allShow) {
+                    e.visible = false
+                }
+            });
+            if (!secondMesh) {
+                const geometry = new THREE.SphereGeometry( 500, 60, 40 );
+                // invert the geometry on the x-axis so that all of the faces point inward
+                geometry.scale(-1, 1, 1);
+                const material = new THREE.MeshBasicMaterial({map: new THREE.TextureLoader().load('/textures/全景/1.jpg')});
+                secondMesh = new THREE.Mesh(geometry, material);
+                secondMesh.userData.isSecond = true;
+                scene.add(secondMesh);
+            } else {
+                secondMesh.visible = true;
+            }
+        }
+        setR(Math.random());
     }
 
     /* 添加2d顶牌 */
@@ -1031,7 +1100,7 @@ export default function City() {
 
         const fbxLoader = new FBXLoader();
         fbxLoader.load('/fbxs/shanghai.FBX', fbx => {
-            fbx.traverse(child => {
+            fbx.traverse((child: any) => {
                 if (cityArray.includes(child.name)) {
                     setCityMaterial(child); /* 建筑 */
                     surroundLine(child); /* 包围线效果 */
@@ -1163,6 +1232,7 @@ export default function City() {
     }
     return (
         <div id="parent">
+            <img onClick={switchScene} src={BackImg} alt="" style={{display: prePosition ? 'block' : 'none', position: 'absolute', zIndex: 10, width: 24, cursor: 'pointer', top: 12, left: 80}} />
             <canvas id="three" style={{zIndex: 1}}></canvas>
             <video id="video" loop crossOrigin="anonymous" style={{display: 'none'}}>
                 {/* <source src="textures/sintel.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' /> */}

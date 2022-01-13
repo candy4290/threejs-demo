@@ -21,6 +21,8 @@ import {BrowserCheck} from '@kzlib/kcomponents';
 // import Cannon4 from './components/cannon4';
 // import Cannon5 from './components/cannon5';
 import City from './components/city';
+// import { QuanJing } from './components/quanjing';
+// import Lod from './components/lod';
 // import Shield from './components/shield';
 // import Wall from './components/wall';
 // import ShaderMaterial from './components/shader-material';
@@ -60,6 +62,8 @@ function App() {
       {/* <Car1 /> */}
       {/* <Car2 /> */}
       <City />
+      {/* <QuanJing /> */}
+      {/* <Lod /> */}
       {/* <Shield /> */}
       {/* <Wall /> */}
       {/* <VideoDemo /> */}
