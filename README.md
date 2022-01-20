@@ -75,6 +75,11 @@ taa: 有动画时失效
 getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-between-getpoint-and-getpointat-methods/6637/2  
 模型闪烁问题处理：renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });---但是这样会造成卡顿  
 
+### UV贴图
+一个点需要一个uv值。
+- u:图片在显示器水平的坐标  
+- v:图片在显示器垂直的坐标
+
 ### 着色器材质内置变量
 - gl_PointSize  
 gl_PointSize内置变量是一个float类型，在点渲染模式中，顶点由于是一个点，理论上我们并无法看到，所以他是以一个正对着相机的正方形面表现的。使用内置变量gl_PointSize主要是用来设置顶点渲染出来的正方形面的相素大小（默认值是0）。
