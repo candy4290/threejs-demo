@@ -75,6 +75,14 @@ taa: 有动画时失效
 getPoint&getPointAt区别：https://discourse.threejs.org/t/curve-difference-between-getpoint-and-getpointat-methods/6637/2  
 模型闪烁问题处理：renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });---但是这样会造成卡顿  
 
+### 天空盒
+'右.jpg', /* 右-px */
+'左.jpg', /* 左-nx */
+'顶.jpg', /* 顶-py */
+'底.jpg', /* 底-ny */
+'后.jpg', /* 后-pz */
+'前.jpg' /* 前-nz */
+
 ### UV贴图
 一个点需要一个uv值。
 - u:图片在显示器水平的坐标  

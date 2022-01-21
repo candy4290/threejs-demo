@@ -52,8 +52,17 @@ export function createLightLine(list: number[][], scene: THREE.Scene, path = '/r
     const tubeGeometry = new THREE.TubeGeometry(res.curve, 1000, 1, 30)
     const texture = new THREE.TextureLoader().load(path)
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping; //每个都重复
-    texture.repeat.set(6, 1);
-    const tubeMesh = new THREE.Mesh(tubeGeometry, new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true }))
+    // texture.repeat.set(6, 1);
+    // texture.repeat.x = 50;
+    const tubeMesh = new THREE.Mesh(
+        tubeGeometry, 
+        new THREE.MeshPhongMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide
+        })
+        // new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 1 })
+    );
     texture.needsUpdate = true
     tubeMesh.position.setY(1)
     scene.add(tubeMesh)

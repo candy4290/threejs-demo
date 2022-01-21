@@ -344,7 +344,32 @@ export default function City() {
 
         window.addEventListener('resize', onWindowResize);
 
+        // scene.background = createSkyBox();
+
         render();
+    }
+
+    /* 天空盒 */
+    function createSkyBox() {
+        const path = "/textures/cube/星空/";
+        /* 
+        '右.jpg',
+        '左.jpg',
+        '顶.jpg',
+        '底.jpg',
+        '前.jpg',
+        '后.jpg'
+        */
+        const urls = [
+            '右.jpg', /* 右-px */
+            '左.jpg', /* 左-nx */
+            '顶.jpg', /* 顶-py */
+            '底.jpg', /* 底-ny */
+            '后.jpg', /* 后-pz */
+            '前.jpg' /* 前-nz */
+        ];
+        const cubeTextureLoader = new THREE.CubeTextureLoader();
+        return cubeTextureLoader.setPath(path).load(urls);
     }
 
     function loop() { /* 无人机巡游 */
@@ -612,7 +637,15 @@ export default function City() {
                 console.log([[t.x, t.y, t.z], [t2.x, t2.y, t2.z]])
             },
             '相机跟随': '不跟随',
+            'tx': 1,
+            'ty': 1
         }
+        folder2.add(settings, 'tx', 1, 200, 1).onChange(e => {
+            texture.repeat.x = e;
+        })
+        folder2.add(settings, 'ty', 1, 200, 1).onChange(e => {
+            texture.repeat.y = e;
+        })
         folder.add(settings, '开始巡逻');
         folder.add(settings, '下雪').onChange(e => {
             if (e) {
